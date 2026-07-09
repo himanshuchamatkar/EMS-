@@ -1,0 +1,215 @@
+{
+  "ambulances": [
+    {
+      "id": "e58dc8b0-d083-45ba-88f5-eec487958f9d",
+      "speed": 0,
+      "heading": 0,
+      "created_at": "2026-07-09T07:46:00.936Z",
+      "name": "AGRAWAL",
+      "vehicle_number": "1",
+      "driver_name": "ABC",
+      "latitude": 20.74847848842499,
+      "longitude": 78.60332800929869,
+      "status": "Offline"
+    },
+    {
+      "id": "9492cef9-9328-41ba-8c5c-a8978288999d",
+      "speed": 0,
+      "heading": 0,
+      "created_at": "2026-07-09T07:46:24.812Z",
+      "name": "CORTEX",
+      "vehicle_number": "2",
+      "driver_name": "DEF",
+      "latitude": 20.748990171237473,
+      "longitude": 78.60509794861784,
+      "status": "Maintenance"
+    },
+    {
+      "id": "581128db-caaa-4d9d-904f-7b8ef68f0475",
+      "speed": 0,
+      "heading": 0,
+      "created_at": "2026-07-09T07:47:03.489Z",
+      "name": "MAIHOSPITAL",
+      "vehicle_number": "3",
+      "driver_name": "GIH",
+      "latitude": 20.753305,
+      "longitude": 78.600268,
+      "status": "Maintenance"
+    },
+    {
+      "id": "07316e4d-3380-4601-9881-8f966e668836",
+      "speed": 0,
+      "heading": 0,
+      "created_at": "2026-07-09T07:48:40.843Z",
+      "name": "SAWANGI",
+      "vehicle_number": "4",
+      "driver_name": "KTV REDDY",
+      "latitude": 20.715314377823475,
+      "longitude": 78.5727699396881,
+      "status": "Maintenance"
+    },
+    {
+      "id": "bb7bd908-2c43-4f07-a6db-e212e07ba0b0",
+      "speed": 0,
+      "heading": 0,
+      "created_at": "2026-07-09T07:49:28.773Z",
+      "name": "SEWAGRAM",
+      "vehicle_number": "5",
+      "driver_name": "SEVA",
+      "latitude": 20.739177143153785,
+      "longitude": 78.66121246844082,
+      "status": "Maintenance"
+    },
+    {
+      "id": "70352d74-3019-4c01-b1dc-28d2bfd11ec8",
+      "speed": 0,
+      "heading": 0,
+      "created_at": "2026-07-09T07:50:56.734Z",
+      "name": "UNKNOWN",
+      "vehicle_number": "6",
+      "driver_name": "ASD",
+      "latitude": 20.723840418420597,
+      "longitude": 78.60212208699966,
+      "status": "Maintenance"
+    },
+    {
+      "id": "8b0ddfc8-fef7-4e48-a78e-e16f6ee2ad69",
+      "speed": 0,
+      "heading": 0,
+      "created_at": "2026-07-09T09:02:27.852Z",
+      "name": "fghj",
+      "vehicle_number": "gh",
+      "driver_name": "tj",
+      "latitude": 20.742065889050263,
+      "longitude": 78.60954781037184,
+      "status": "Available"
+    },
+    {
+      "id": "22afc0bf-0835-4116-852f-33df8a0fed4f",
+      "speed": 0,
+      "heading": 0,
+      "created_at": "2026-07-09T09:10:53.440Z",
+      "name": "ng",
+      "vehicle_number": "gh",
+      "driver_name": "gh",
+      "latitude": 21.136404812153962,
+      "longitude": 79.07869343348219,
+      "status": "Available"
+    }
+  ],
+  "emergencies": [],
+  "dispatch_logs": [
+    {
+      "id": "d1111111-1111-1111-1111-111111111111",
+      "emergency_id": "e1111111-1111-1111-1111-111111111111",
+      "ambulance_id": "a2222222-2222-2222-2222-222222222222",
+      "assigned_time": "2026-07-09T07:02:05.053Z",
+      "response_time": null,
+      "status": "Dispatched"
+    },
+    {
+      "id": "2cbdab3d-757a-465b-99f9-2de5fb6389b6",
+      "assigned_time": "2026-07-09T07:47:37.898Z",
+      "response_time": null,
+      "status": "Cancelled",
+      "emergency_id": "e370a624-c5cc-4fa6-949a-e207f20160d6",
+      "ambulance_id": "e58dc8b0-d083-45ba-88f5-eec487958f9d"
+    },
+    {
+      "id": "da89a6f1-e4a1-4330-ba8d-d8bad199a33e",
+      "assigned_time": "2026-07-09T07:47:54.284Z",
+      "response_time": null,
+      "status": "Cancelled",
+      "emergency_id": "df1a5bc3-a679-4853-bb23-6297a400801e",
+      "ambulance_id": "581128db-caaa-4d9d-904f-7b8ef68f0475"
+    },
+    {
+      "id": "8f645a02-5aa4-44e3-a491-cafffa0b2097",
+      "assigned_time": "2026-07-09T08:23:26.931Z",
+      "response_time": null,
+      "status": "Cancelled",
+      "emergency_id": "4030959a-04c7-4865-8432-6162c509b97e",
+      "ambulance_id": "e58dc8b0-d083-45ba-88f5-eec487958f9d"
+    },
+    {
+      "id": "d2a3d6b9-7d19-4e43-9577-bb8c969fbec9",
+      "assigned_time": "2026-07-09T08:23:59.574Z",
+      "response_time": null,
+      "status": "Cancelled",
+      "emergency_id": "465fe640-6e58-41c8-afe0-9bc6457baf1a",
+      "ambulance_id": "bb7bd908-2c43-4f07-a6db-e212e07ba0b0"
+    },
+    {
+      "id": "da67d77a-8944-402c-8e6a-05d69f5711a6",
+      "assigned_time": "2026-07-09T08:58:03.176Z",
+      "response_time": null,
+      "status": "Cancelled",
+      "emergency_id": "72d422aa-b964-4c2e-8f1e-9b00ab122413",
+      "ambulance_id": "bb7bd908-2c43-4f07-a6db-e212e07ba0b0"
+    },
+    {
+      "id": "fe46e613-a058-40d2-a90c-652232dcf998",
+      "assigned_time": "2026-07-09T08:59:38.280Z",
+      "response_time": null,
+      "status": "Cancelled",
+      "emergency_id": "0d6f45aa-d03c-42fa-ab95-b44acb70119f",
+      "ambulance_id": "581128db-caaa-4d9d-904f-7b8ef68f0475"
+    },
+    {
+      "id": "5a76c34a-f5c3-4d09-a64a-fbfa501ffac2",
+      "assigned_time": "2026-07-09T09:00:06.672Z",
+      "response_time": null,
+      "status": "Cancelled",
+      "emergency_id": "24814b60-986d-42b5-9b46-7290cc0c8957",
+      "ambulance_id": "e58dc8b0-d083-45ba-88f5-eec487958f9d"
+    },
+    {
+      "id": "1c0d0061-f56b-4a80-a642-e31144724760",
+      "assigned_time": "2026-07-09T09:00:18.184Z",
+      "response_time": null,
+      "status": "Cancelled",
+      "emergency_id": "0e5577ab-fc1a-4e43-ad23-88014b61ca1d",
+      "ambulance_id": "07316e4d-3380-4601-9881-8f966e668836"
+    },
+    {
+      "id": "8b1b6449-e570-404e-9104-63b73a040013",
+      "assigned_time": "2026-07-09T09:02:35.496Z",
+      "response_time": null,
+      "status": "Cancelled",
+      "emergency_id": "dd7c771e-aaf2-4822-b6f5-84f230407fb4",
+      "ambulance_id": "8b0ddfc8-fef7-4e48-a78e-e16f6ee2ad69"
+    },
+    {
+      "id": "e7315fe3-8782-4a12-8cce-b37b85bb0c74",
+      "assigned_time": "2026-07-09T09:11:17.031Z",
+      "response_time": null,
+      "status": "Reassigned",
+      "emergency_id": "50309c21-c71d-4519-8945-4ba179db1265",
+      "ambulance_id": "22afc0bf-0835-4116-852f-33df8a0fed4f"
+    },
+    {
+      "id": "5f90b702-e31b-4874-a698-dea27ca1b7a3",
+      "assigned_time": "2026-07-09T09:11:43.718Z",
+      "response_time": null,
+      "status": "Cancelled",
+      "emergency_id": "50309c21-c71d-4519-8945-4ba179db1265",
+      "ambulance_id": "8b0ddfc8-fef7-4e48-a78e-e16f6ee2ad69"
+    },
+    {
+      "id": "5af24a55-0e36-4ae7-b095-afa011fad229",
+      "assigned_time": "2026-07-09T09:13:49.440Z",
+      "response_time": null,
+      "status": "Reassigned",
+      "emergency_id": "9502866a-d07c-44f1-8784-2fb00f0aa4b0",
+      "ambulance_id": "8b0ddfc8-fef7-4e48-a78e-e16f6ee2ad69"
+    },
+    {
+      "id": "cc1eb600-3ab5-4788-97e7-9555aad2a22d",
+      "assigned_time": "2026-07-09T09:14:08.511Z",
+      "response_time": null,
+      "status": "Cancelled",
+      "emergency_id": "9502866a-d07c-44f1-8784-2fb00f0aa4b0",
+      "ambulance_id": "22afc0bf-0835-4116-852f-33df8a0fed4f"
+    }
+  ]
+}

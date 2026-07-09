@@ -1,0 +1,177 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom Scrollbar for Sleek Dark Look */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background-color: #0f172a;
+  color: #f8fafc;
+  overflow: hidden;
+}
+
+/* Leaflet Dark Mode Map Filters */
+.dark-map .leaflet-tile {
+  filter: invert(100%) hue-rotate(180deg) brightness(85%) contrast(110%);
+}
+
+.dark-map .leaflet-container {
+  background: #0f172a !important;
+}
+
+.dark-map .leaflet-control-zoom-in,
+.dark-map .leaflet-control-zoom-out {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
+.dark-map .leaflet-control-zoom-in:hover,
+.dark-map .leaflet-control-zoom-out:hover {
+  background-color: #334155 !important;
+}
+
+.dark-map .leaflet-bar {
+  border: 1px solid #334155 !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+}
+
+.dark-map .leaflet-popup-content-wrapper {
+  background: #1e293b !important;
+  color: #f8fafc !important;
+  border: 1px solid #334155 !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5) !important;
+  border-radius: 0.5rem !important;
+}
+
+.dark-map .leaflet-popup-tip {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+}
+
+/* Custom CSS Route Line Animation */
+.leaflet-ant-path {
+  stroke-dasharray: 8, 8;
+  animation: leaflet-ant-path-animation 2s linear infinite;
+}
+
+@keyframes leaflet-ant-path-animation {
+  from {
+    stroke-dashoffset: 16;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Glowing Custom Leaflet Markers */
+.marker-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.marker-pulse {
+  position: absolute;
+  border-radius: 50%;
+  width: 100%;
+  height: 100%;
+  opacity: 0.6;
+}
+
+.marker-dot {
+  position: absolute;
+  width: 50%;
+  height: 50%;
+  border-radius: 50%;
+  background-color: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+/* Available - Green */
+.marker-available .marker-pulse {
+  background-color: #10b981;
+  animation: pulse-glowing-green 2s infinite;
+}
+.marker-available .marker-dot {
+  background-color: #10b981;
+  border: 2px solid white;
+}
+
+/* Busy - Red */
+.marker-busy .marker-pulse {
+  background-color: #ef4444;
+  animation: pulse-glowing-red 2s infinite;
+}
+.marker-busy .marker-dot {
+  background-color: #ef4444;
+  border: 2px solid white;
+}
+
+/* Offline - Gray */
+.marker-offline .marker-pulse {
+  background-color: #64748b;
+}
+.marker-offline .marker-dot {
+  background-color: #64748b;
+  border: 2px solid white;
+}
+
+/* Maintenance - Orange */
+.marker-maintenance .marker-pulse {
+  background-color: #f59e0b;
+  animation: pulse-glowing-orange 2s infinite;
+}
+.marker-maintenance .marker-dot {
+  background-color: #f59e0b;
+  border: 2px solid white;
+}
+
+/* Emergency - Blue */
+.marker-emergency .marker-pulse {
+  background-color: #3b82f6;
+  animation: pulse-glowing-blue 1.5s infinite;
+}
+.marker-emergency .marker-dot {
+  background-color: #3b82f6;
+  border: 2px solid white;
+  width: 60%;
+  height: 60%;
+}
+
+@keyframes pulse-glowing-green {
+  0% { transform: scale(0.6); opacity: 0.9; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+
+@keyframes pulse-glowing-red {
+  0% { transform: scale(0.6); opacity: 0.9; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+
+@keyframes pulse-glowing-orange {
+  0% { transform: scale(0.6); opacity: 0.9; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+@keyframes pulse-glowing-blue {
+  0% { transform: scale(0.6); opacity: 1; }
+  100% { transform: scale(2.8); opacity: 0; }
+}
