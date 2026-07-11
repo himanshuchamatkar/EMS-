@@ -68,24 +68,12 @@
       "name": "cosmos",
       "vehicle_number": "AMB-433-1",
       "driver_name": "tany",
-      "latitude": 20.7377432,
-      "longitude": 78.5950573,
-      "status": "Busy"
+      "latitude": 20.7377497,
+      "longitude": 78.5950623,
+      "status": "Available"
     }
   ],
-  "emergencies": [
-    {
-      "id": "e657063c-0e4d-4305-be53-6bcceaee09bc",
-      "assigned_ambulance": "ee0184cc-4a53-4e92-9b7c-52484feae70f",
-      "status": "VICTIM_PICKED",
-      "created_at": "2026-07-11T07:44:56.017Z",
-      "latitude": 20.738291933329236,
-      "longitude": 78.59590262559706,
-      "priority": "High",
-      "description": "bike fall",
-      "picked_up_at": "2026-07-11T07:45:32.171Z"
-    }
-  ],
+  "emergencies": [],
   "dispatch_logs": [
     {
       "id": "d1111111-1111-1111-1111-111111111111",
@@ -259,10 +247,27 @@
       "id": "e6200b45-3304-4d05-8fbe-09721a59c351",
       "assigned_time": "2026-07-11T07:44:56.030Z",
       "response_time": null,
-      "status": "PickedUp",
+      "status": "Cancelled",
       "emergency_id": "e657063c-0e4d-4305-be53-6bcceaee09bc",
       "ambulance_id": "ee0184cc-4a53-4e92-9b7c-52484feae70f",
       "pickup_time": "2026-07-11T07:45:32.171Z"
+    },
+    {
+      "id": "2fb8be86-bcc1-4d53-9c2b-f0bc10b90e30",
+      "assigned_time": "2026-07-11T07:55:15.333Z",
+      "response_time": null,
+      "status": "Cancelled",
+      "emergency_id": "5bf48ccd-aae0-4d42-a6cb-aa1eede20b63",
+      "ambulance_id": "ee0184cc-4a53-4e92-9b7c-52484feae70f"
+    },
+    {
+      "id": "cdab3bcb-04d8-4ac7-97e8-f8a8bc63988a",
+      "assigned_time": "2026-07-11T07:56:23.643Z",
+      "response_time": "2026-07-11T07:56:53.103Z",
+      "status": "Cancelled",
+      "emergency_id": "c549eb93-7784-4b59-bbf0-7ef9301eea36",
+      "ambulance_id": "ee0184cc-4a53-4e92-9b7c-52484feae70f",
+      "pickup_time": "2026-07-11T07:56:39.630Z"
     }
   ]
 }
