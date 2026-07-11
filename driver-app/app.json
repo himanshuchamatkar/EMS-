@@ -7,8 +7,8 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "extra": {
-      "apiBaseUrl": "https://smart-ambulance-api-5ui6.onrender.com/api",
-      "socketUrl": "https://smart-ambulance-api-5ui6.onrender.com"
+      "apiBaseUrl": "http://172.26.128.1:5000/api",
+      "socketUrl": "http://172.26.128.1:5000"
     },
     "ios": {
       "supportsTablet": true,
