@@ -1,309 +1,143 @@
-const fs = require('fs');
-const path = require('path');
-const { v4: uuidv4 } = require('uuid');
+const { createClient } = require('@supabase/supabase-js');
+require('dotenv').config();
 
-const dbPath = path.join(__dirname, 'db.json');
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-const defaultSeedData = {
-  ambulances: [
-    {
-      id: 'a1111111-1111-1111-1111-111111111111',
-      name: 'Rescue Alpha',
-      vehicle_number: 'AMB-911-A',
-      driver_name: 'John Doe',
-      latitude: 28.6353,
-      longitude: 77.2250,
-      status: 'Available',
-      speed: 0,
-      heading: 0,
-      created_at: new Date(Date.now() - 3600000 * 2).toISOString()
-    },
-    {
-      id: 'a2222222-2222-2222-2222-222222222222',
-      name: 'Rescue Bravo',
-      vehicle_number: 'AMB-911-B',
-      driver_name: 'Jane Smith',
-      latitude: 28.5833,
-      longitude: 77.2289,
-      status: 'Busy',
-      speed: 45,
-      heading: 90,
-      created_at: new Date(Date.now() - 3600000 * 3).toISOString()
-    },
-    {
-      id: 'a3333333-3333-3333-3333-333333333333',
-      name: 'Rescue Charlie',
-      vehicle_number: 'AMB-911-C',
-      driver_name: 'Robert Johnson',
-      latitude: 28.6562,
-      longitude: 77.2410,
-      status: 'Offline',
-      speed: 0,
-      heading: 0,
-      created_at: new Date(Date.now() - 3600000 * 4).toISOString()
-    },
-    {
-      id: 'a4444444-4444-4444-4444-444444444444',
-      name: 'Rescue Delta',
-      vehicle_number: 'AMB-911-D',
-      driver_name: 'Sarah Williams',
-      latitude: 28.5244,
-      longitude: 77.1855,
-      status: 'Maintenance',
-      speed: 0,
-      heading: 0,
-      created_at: new Date(Date.now() - 3600000 * 5).toISOString()
-    },
-    {
-      id: 'a5555555-5555-5555-5555-555555555555',
-      name: 'Rescue Echo',
-      vehicle_number: 'AMB-911-E',
-      driver_name: 'David Miller',
-      latitude: 28.6129,
-      longitude: 77.2295,
-      status: 'Available',
-      speed: 0,
-      heading: 0,
-      created_at: new Date(Date.now() - 3600000).toISOString()
-    },
-    {
-      id: 'a6666666-6666-6666-6666-666666666666',
-      name: 'Rescue Foxtrot',
-      vehicle_number: 'AMB-911-F',
-      driver_name: 'Emily Davis',
-      latitude: 28.5910,
-      longitude: 77.1950,
-      status: 'Available',
-      speed: 0,
-      heading: 0,
-      created_at: new Date().toISOString()
-    }
-  ],
-  emergencies: [
-    {
-      id: 'e1111111-1111-1111-1111-111111111111',
-      latitude: 28.5980,
-      longitude: 77.2220,
-      description: 'Car collision near Lodhi Colony. Two people injured.',
-      priority: 'High',
-      assigned_ambulance: 'a2222222-2222-2222-2222-222222222222',
-      status: 'Assigned',
-      created_at: new Date(Date.now() - 1200000).toISOString()
-    },
-    {
-      id: 'e2222222-2222-2222-2222-222222222222',
-      latitude: 28.6300,
-      longitude: 77.2150,
-      description: 'Patient showing symptoms of cardiac arrest near Connaught Place.',
-      priority: 'Critical',
-      assigned_ambulance: null,
-      status: 'Pending',
-      created_at: new Date(Date.now() - 600000).toISOString()
-    }
-  ],
-  dispatch_logs: [
-    {
-      id: 'd1111111-1111-1111-1111-111111111111',
-      emergency_id: 'e1111111-1111-1111-1111-111111111111',
-      ambulance_id: 'a2222222-2222-2222-2222-222222222222',
-      assigned_time: new Date(Date.now() - 1200000).toISOString(),
-      response_time: null,
-      status: 'Dispatched'
-    }
-  ]
-};
-
-// Initialize DB file if not exists or invalid JSON
-function initDB() {
-  const dirPath = path.dirname(dbPath);
-  if (!fs.existsSync(dirPath)) {
-    fs.mkdirSync(dirPath, { recursive: true });
-  }
-
-  try {
-    if (fs.existsSync(dbPath)) {
-      const data = fs.readFileSync(dbPath, 'utf8');
-      JSON.parse(data); // Validate JSON format
-    } else {
-      writeDB(defaultSeedData);
-    }
-  } catch (err) {
-    console.warn('DB file corrupt or missing. Re-seeding database...');
-    writeDB(defaultSeedData);
-  }
+if (!supabaseUrl || !supabaseKey) {
+  console.error("CRITICAL: Supabase URL or Service Role Key is missing in environment variables!");
 }
 
-function readDB() {
-  try {
-    const data = fs.readFileSync(dbPath, 'utf8');
-    return JSON.parse(data);
-  } catch (err) {
-    return defaultSeedData;
-  }
-}
-
-function writeDB(data) {
-  fs.writeFileSync(dbPath, JSON.stringify(data, null, 2), 'utf8');
-}
-
-initDB();
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 const db = {
-  // Reset database to seed data
-  reset() {
-    writeDB(defaultSeedData);
-    return defaultSeedData;
-  },
+  // Reset database back to default seed state
+  async reset() {
+    try {
+      // Delete logs, emergencies and seed new ones
+      await supabase.from('dispatch_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      await supabase.from('emergencies').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      await supabase.from('ambulances').delete().neq('id', '00000000-0000-0000-0000-000000000000');
 
-  // Ambulances
-  getAmbulances() {
-    return readDB().ambulances;
-  },
+      const seedAmbs = [
+        { id: 'a1111111-1111-1111-1111-111111111111', name: 'Rescue Alpha', vehicle_number: 'AMB-911-A', driver_name: 'John Doe', latitude: 28.6353, longitude: 77.2250, status: 'Available', speed: 0, heading: 0 },
+        { id: 'a2222222-2222-2222-2222-222222222222', name: 'Rescue Bravo', vehicle_number: 'AMB-911-B', driver_name: 'Jane Smith', latitude: 28.5833, longitude: 77.2289, status: 'Busy', speed: 45, heading: 90 },
+        { id: 'a3333333-3333-3333-3333-333333333333', name: 'Rescue Charlie', vehicle_number: 'AMB-911-C', driver_name: 'Robert Johnson', latitude: 28.6562, longitude: 77.2410, status: 'Offline', speed: 0, heading: 0 }
+      ];
+      await supabase.from('ambulances').insert(seedAmbs);
+      
+      const seedEmergencies = [
+        { id: 'e1111111-1111-1111-1111-111111111111', latitude: 28.5980, longitude: 77.2220, description: 'Car collision near Lodhi Colony. Two people injured.', priority: 'High', assigned_ambulance: 'a2222222-2222-2222-2222-222222222222', status: 'Assigned' }
+      ];
+      await supabase.from('emergencies').insert(seedEmergencies);
 
-  getAmbulanceById(id) {
-    return readDB().ambulances.find(amb => amb.id === id);
-  },
-
-  addAmbulance(ambulance) {
-    const data = readDB();
-    const newAmbulance = {
-      id: uuidv4(),
-      speed: 0,
-      heading: 0,
-      created_at: new Date().toISOString(),
-      ...ambulance
-    };
-    data.ambulances.push(newAmbulance);
-    writeDB(data);
-    return newAmbulance;
-  },
-
-  updateAmbulance(id, updates) {
-    const data = readDB();
-    const index = data.ambulances.findIndex(amb => amb.id === id);
-    if (index === -1) return null;
-
-    data.ambulances[index] = {
-      ...data.ambulances[index],
-      ...updates
-    };
-    writeDB(data);
-    return data.ambulances[index];
-  },
-
-  deleteAmbulance(id) {
-    const data = readDB();
-    const index = data.ambulances.findIndex(amb => amb.id === id);
-    if (index === -1) return false;
-
-    data.ambulances.splice(index, 1);
-    
-    // Also clean up any active assignments in emergencies and dispatch logs
-    data.emergencies = data.emergencies.map(emp => {
-      if (emp.assigned_ambulance === id) {
-        return { ...emp, assigned_ambulance: null, status: 'Pending' };
-      }
-      return emp;
-    });
-
-    writeDB(data);
-    return true;
-  },
-
-  // Emergencies
-  getEmergencies() {
-    return readDB().emergencies;
-  },
-
-  getEmergencyById(id) {
-    return readDB().emergencies.find(emp => emp.id === id);
-  },
-
-  addEmergency(emergency) {
-    const data = readDB();
-    const newEmergency = {
-      id: uuidv4(),
-      assigned_ambulance: null,
-      status: 'Pending',
-      created_at: new Date().toISOString(),
-      ...emergency
-    };
-    data.emergencies.push(newEmergency);
-    writeDB(data);
-    return newEmergency;
-  },
-
-  updateEmergency(id, updates) {
-    const data = readDB();
-    const index = data.emergencies.findIndex(emp => emp.id === id);
-    if (index === -1) return null;
-
-    data.emergencies[index] = {
-      ...data.emergencies[index],
-      ...updates
-    };
-    writeDB(data);
-    return data.emergencies[index];
-  },
-
-  deleteEmergency(id) {
-    const data = readDB();
-    const index = data.emergencies.findIndex(emp => emp.id === id);
-    if (index === -1) return false;
-
-    const emp = data.emergencies[index];
-    data.emergencies.splice(index, 1);
-
-    // If an ambulance was assigned, set it to Available
-    if (emp.assigned_ambulance) {
-      const ambIndex = data.ambulances.findIndex(a => a.id === emp.assigned_ambulance);
-      if (ambIndex !== -1) {
-        data.ambulances[ambIndex].status = 'Available';
-        data.ambulances[ambIndex].speed = 0;
-      }
+      const seedLogs = [
+        { id: 'd1111111-1111-1111-1111-111111111111', emergency_id: 'e1111111-1111-1111-1111-111111111111', ambulance_id: 'a2222222-2222-2222-2222-222222222222', status: 'Dispatched' }
+      ];
+      await supabase.from('dispatch_logs').insert(seedLogs);
+      return { status: 'success' };
+    } catch (err) {
+      console.error('Error seeding DB:', err);
+      throw err;
     }
-
-    writeDB(data);
-    return true;
   },
 
-  // Dispatch Logs
-  getDispatchLogs() {
-    return readDB().dispatch_logs;
+  // Ambulances API
+  async getAmbulances() {
+    const { data, error } = await supabase.from('ambulances').select('*');
+    if (error) throw error;
+    return data;
   },
 
-  addDispatchLog(log) {
-    const data = readDB();
-    const newLog = {
-      id: uuidv4(),
-      assigned_time: new Date().toISOString(),
-      response_time: null,
-      status: 'Dispatched',
-      ...log
-    };
-    data.dispatch_logs.push(newLog);
-    writeDB(data);
-    return newLog;
+  async getAmbulanceById(id) {
+    const { data, error } = await supabase.from('ambulances').select('*').eq('id', id);
+    if (error || !data || data.length === 0) return null;
+    return data[0];
   },
 
-  updateDispatchLogForEmergency(emergencyId, updates) {
-    const data = readDB();
-    const logs = data.dispatch_logs.filter(log => log.emergency_id === emergencyId);
-    if (logs.length === 0) return null;
+  async addAmbulance(ambulance) {
+    const { data, error } = await supabase.from('ambulances').insert([ambulance]).select();
+    if (error) throw error;
+    return data[0];
+  },
 
-    // Find the latest active log for this emergency
+  async updateAmbulance(id, updates) {
+    const { data, error } = await supabase.from('ambulances').update(updates).eq('id', id).select();
+    if (error) throw error;
+    if (!data || data.length === 0) return null;
+    return data[0];
+  },
+
+  async deleteAmbulance(id) {
+    const { error } = await supabase.from('ambulances').delete().eq('id', id);
+    return !error;
+  },
+
+  // Emergencies API
+  async getEmergencies() {
+    const { data, error } = await supabase.from('emergencies').select('*');
+    if (error) throw error;
+    return data;
+  },
+
+  async getEmergencyById(id) {
+    const { data, error } = await supabase.from('emergencies').select('*').eq('id', id);
+    if (error || !data || data.length === 0) return null;
+    return data[0];
+  },
+
+  async addEmergency(emergency) {
+    const { data, error } = await supabase.from('emergencies').insert([emergency]).select();
+    if (error) throw error;
+    return data[0];
+  },
+
+  async updateEmergency(id, updates) {
+    const { data, error } = await supabase.from('emergencies').update(updates).eq('id', id).select();
+    if (error) throw error;
+    if (!data || data.length === 0) return null;
+    return data[0];
+  },
+
+  async deleteEmergency(id) {
+    const { error } = await supabase.from('emergencies').delete().eq('id', id);
+    return !error;
+  },
+
+  // Dispatch Logs API
+  async getDispatchLogs() {
+    const { data, error } = await supabase.from('dispatch_logs').select('*');
+    if (error) throw error;
+    return data;
+  },
+
+  async addDispatchLog(log) {
+    const { data, error } = await supabase.from('dispatch_logs').insert([log]).select();
+    if (error) throw error;
+    return data[0];
+  },
+
+  async updateDispatchLogForEmergency(emergencyId, updates) {
+    // Get all logs for the emergency
+    const { data: logs, error } = await supabase
+      .from('dispatch_logs')
+      .select('*')
+      .eq('emergency_id', emergencyId);
+
+    if (error || !logs || logs.length === 0) return null;
+
+    // Find latest log
     const latestLog = logs.sort((a, b) => new Date(b.assigned_time) - new Date(a.assigned_time))[0];
-    const logIndex = data.dispatch_logs.findIndex(log => log.id === latestLog.id);
-    
-    if (logIndex !== -1) {
-      data.dispatch_logs[logIndex] = {
-        ...data.dispatch_logs[logIndex],
-        ...updates
-      };
-      writeDB(data);
-      return data.dispatch_logs[logIndex];
-    }
-    return null;
+
+    const { data: updatedLog, error: updateError } = await supabase
+      .from('dispatch_logs')
+      .update(updates)
+      .eq('id', latestLog.id)
+      .select();
+
+    if (updateError) throw updateError;
+    if (!updatedLog || updatedLog.length === 0) return null;
+    return updatedLog[0];
   }
 };
 
