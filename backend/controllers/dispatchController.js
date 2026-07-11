@@ -312,6 +312,64 @@ exports.pickupVictim = (req, res) => {
   }
 };
 
+// Driver app confirms the victim was dropped off at the hospital. This is
+// the terminal step: resolves the incident and frees the ambulance — the
+// same end state Simulation mode's tick-based auto-arrival already reaches,
+// so it reuses the same 'Resolved' status and 'dispatch:resolved' event.
+exports.dropAtHospital = (req, res) => {
+  try {
+    const { emergency_id, ambulance_id } = req.body;
+
+    if (!emergency_id || !ambulance_id) {
+      return res.status(400).json({ error: 'Missing emergency_id or ambulance_id' });
+    }
+
+    const emergency = db.getEmergencyById(emergency_id);
+    if (!emergency) {
+      return res.status(404).json({ error: 'Emergency not found' });
+    }
+
+    if (emergency.status !== 'VICTIM_PICKED' || emergency.assigned_ambulance !== ambulance_id) {
+      return res.status(400).json({ error: 'Victim must be picked up before drop-off can be recorded' });
+    }
+
+    const droppedAt = new Date().toISOString();
+
+    const updatedAmbulance = db.updateAmbulance(ambulance_id, {
+      status: 'Available',
+      speed: 0,
+      heading: 0
+    });
+
+    const updatedEmergency = db.updateEmergency(emergency_id, {
+      status: 'Resolved',
+      dropped_at: droppedAt
+    });
+
+    db.updateDispatchLogForEmergency(emergency_id, {
+      status: 'Delivered',
+      response_time: droppedAt
+    });
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('dispatch:resolved', { emergency_id, ambulance_id });
+      io.emit('ambulance:updated', updatedAmbulance);
+      io.emit('emergency:updated', updatedEmergency);
+      io.emit('ambulances:list', db.getAmbulances());
+      io.emit('emergencies:list', db.getEmergencies());
+    }
+
+    res.json({
+      message: 'Victim dropped at hospital, incident resolved',
+      emergency: updatedEmergency,
+      ambulance: updatedAmbulance
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 exports.getHistory = (req, res) => {
   try {
     const logs = db.getDispatchLogs();

@@ -16,6 +16,9 @@ export default function NavigationScreen({ route, navigation }: Props) {
   const webViewRef = useRef<WebView>(null);
   const mapReadyRef = useRef(false);
   const [submitting, setSubmitting] = useState(false);
+  const [stage, setStage] = useState<'toScene' | 'toHospital'>(
+    emergency.status === 'VICTIM_PICKED' ? 'toHospital' : 'toScene'
+  );
 
   const liveDistance = coords
     ? calculateDistanceKm(coords.latitude, coords.longitude, emergency.latitude, emergency.longitude)
@@ -49,14 +52,15 @@ export default function NavigationScreen({ route, navigation }: Props) {
 
   // Driver-initiated confirmation that the victim is on board. Sets the
   // incident's status to VICTIM_PICKED with a pickup timestamp; the
-  // ambulance stays Busy (still en route) and the admin panel updates live
-  // over the existing Socket.IO connection.
+  // ambulance stays Busy (still en route to the hospital) and the admin
+  // panel updates live over the existing Socket.IO connection. Advances
+  // this screen to the drop-off stage instead of navigating away.
   const submitVictimPickedUp = async () => {
     if (!identity) return;
     setSubmitting(true);
     try {
       await api.pickupVictim(emergency.id, identity.ambulanceId);
-      navigation.replace('Home');
+      setStage('toHospital');
     } catch (err) {
       Alert.alert('Could not confirm pickup', err instanceof Error ? err.message : 'Please try again.');
     } finally {
@@ -71,6 +75,29 @@ export default function NavigationScreen({ route, navigation }: Props) {
     ]);
   };
 
+  // Driver-initiated confirmation that the victim was dropped at the
+  // hospital. Terminal step — resolves the incident and frees the ambulance
+  // back to Available, then returns the driver to the Home screen.
+  const submitDroppedAtHospital = async () => {
+    if (!identity) return;
+    setSubmitting(true);
+    try {
+      await api.dropAtHospital(emergency.id, identity.ambulanceId);
+      navigation.replace('Home');
+    } catch (err) {
+      Alert.alert('Could not confirm drop-off', err instanceof Error ? err.message : 'Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDroppedAtHospital = () => {
+    Alert.alert('Confirm drop-off', 'Have you dropped the victim at the hospital? This will complete the incident and free the ambulance.', [
+      { text: 'Not yet', style: 'cancel' },
+      { text: 'Yes, dropped off', style: 'default', onPress: submitDroppedAtHospital },
+    ]);
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -78,7 +105,7 @@ export default function NavigationScreen({ route, navigation }: Props) {
           <Text style={styles.back}>‹ Back</Text>
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <Text style={styles.title}>En route</Text>
+          <Text style={styles.title}>{stage === 'toHospital' ? 'To hospital' : 'En route'}</Text>
           <Text style={styles.subtitle} numberOfLines={1}>
             {emergency.description}
           </Text>
@@ -95,9 +122,15 @@ export default function NavigationScreen({ route, navigation }: Props) {
         originWhitelist={['*']}
       />
 
-      <TouchableOpacity style={styles.arriveBtn} onPress={handleVictimPickedUp} disabled={submitting}>
-        {submitting ? <ActivityIndicator color="#052e19" /> : <Text style={styles.arriveText}>PICK UP VICTIM</Text>}
-      </TouchableOpacity>
+      {stage === 'toScene' ? (
+        <TouchableOpacity style={styles.arriveBtn} onPress={handleVictimPickedUp} disabled={submitting}>
+          {submitting ? <ActivityIndicator color="#052e19" /> : <Text style={styles.arriveText}>PICK UP VICTIM</Text>}
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity style={styles.dropBtn} onPress={handleDroppedAtHospital} disabled={submitting}>
+          {submitting ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.dropText}>🏥 DROP AT HOSPITAL</Text>}
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -125,4 +158,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   arriveText: { color: '#052e19', fontWeight: '800', fontSize: 15 },
+  dropBtn: {
+    margin: 16,
+    backgroundColor: '#2563EB',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  dropText: { color: '#FFFFFF', fontWeight: '800', fontSize: 15 },
 });

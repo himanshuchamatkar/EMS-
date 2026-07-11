@@ -8,6 +8,7 @@ router.post('/cancel', dispatchController.cancelAssignment);
 router.post('/accept', dispatchController.acceptOffer);
 router.post('/reject', dispatchController.rejectOffer);
 router.post('/pickup', dispatchController.pickupVictim);
+router.post('/drop', dispatchController.dropAtHospital);
 router.get('/history', dispatchController.getHistory);
 
 module.exports = router;

@@ -25,6 +25,7 @@ export interface Emergency {
   status: EmergencyStatus;
   offered_to?: string[];
   picked_up_at?: string | null;
+  dropped_at?: string | null;
   created_at: string;
 }
 

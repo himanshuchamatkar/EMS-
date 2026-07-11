@@ -75,7 +75,7 @@ const App = () => {
 
     const handleDispatchResolved = (data) => {
       const ambName = ambulances.find(a => a.id === data.ambulance_id)?.name || 'Ambulance';
-      addToast(`✅ ${ambName} has arrived at the scene. Incident resolved.`, 'success');
+      addToast(`✅ ${ambName}'s incident has been resolved.`, 'success');
       // If the resolved emergency was selected, close dispatch panel or update status
       if (selectedEmergency && selectedEmergency.id === data.emergency_id) {
         setSelectedEmergency(null);

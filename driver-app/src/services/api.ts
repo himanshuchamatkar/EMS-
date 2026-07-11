@@ -50,6 +50,12 @@ interface CancelResponse {
   ambulance: Ambulance;
 }
 
+interface DropResponse {
+  message: string;
+  emergency: Emergency;
+  ambulance: Ambulance;
+}
+
 export const api = {
   getAmbulances: () => client.get<Ambulance[]>('/ambulances').then((r) => r.data),
 
@@ -95,5 +101,12 @@ export const api = {
   pickupVictim: (emergencyId: string, ambulanceId: string) =>
     client
       .post<PickupResponse>('/dispatch/pickup', { emergency_id: emergencyId, ambulance_id: ambulanceId })
+      .then((r) => r.data),
+
+  // Driver confirms drop-off at the hospital. Terminal step: resolves the
+  // incident and frees the ambulance back to Available.
+  dropAtHospital: (emergencyId: string, ambulanceId: string) =>
+    client
+      .post<DropResponse>('/dispatch/drop', { emergency_id: emergencyId, ambulance_id: ambulanceId })
       .then((r) => r.data),
 };
