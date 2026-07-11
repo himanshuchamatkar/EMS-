@@ -1,5 +1,6 @@
 const db = require('../database/db');
-const { autoAssignAmbulance } = require('../services/dispatchEngine');
+const { autoAssignAmbulance, offerNearestAmbulance } = require('../services/dispatchEngine');
+const modeService = require('../services/modeService');
 
 exports.getEmergencies = (req, res) => {
   try {
@@ -44,7 +45,37 @@ exports.createEmergency = (req, res) => {
       io.emit('emergencies:list', db.getEmergencies());
     }
 
-    // Trigger auto-allocation of ambulance
+    if (modeService.getMode() === 'live') {
+      // Live mode: offer to the nearest driver's phone and wait for them to
+      // accept/reject instead of auto-assigning instantly (see dispatchController).
+      const { emergency: offeredEmergency, ambulance, distance } = offerNearestAmbulance(newEmergency.id);
+
+      if (ambulance) {
+        if (io) {
+          io.to(`ambulance:${ambulance.id}`).emit('dispatch:offer', { emergency: offeredEmergency, distance });
+          io.emit('emergency:updated', offeredEmergency);
+          io.emit('emergencies:list', db.getEmergencies());
+        }
+        return res.status(201).json({
+          message: 'Emergency created and offered to nearest driver',
+          emergency: offeredEmergency,
+          offered_to_ambulance: ambulance
+        });
+      }
+
+      if (io) {
+        io.emit('dispatch:offer:exhausted', { emergency_id: newEmergency.id });
+        io.emit('emergency:updated', offeredEmergency);
+        io.emit('emergencies:list', db.getEmergencies());
+      }
+      return res.status(201).json({
+        message: 'Emergency created. No available ambulances to offer to.',
+        emergency: offeredEmergency,
+        offered_to_ambulance: null
+      });
+    }
+
+    // Simulation mode: existing instant auto-assign behavior, unchanged.
     const assignedAmbulance = autoAssignAmbulance(newEmergency.id);
 
     if (assignedAmbulance) {

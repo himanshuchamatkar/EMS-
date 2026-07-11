@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:5000/api';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 async function request(endpoint, options = {}) {
   const url = `${BASE_URL}${endpoint}`;
@@ -57,6 +57,11 @@ export const api = {
       body: data
     });
   },
+  deleteEmergency(id) {
+    return request(`/emergencies/${id}`, {
+      method: 'DELETE'
+    });
+  },
 
   // Dispatch operations
   findNearest(latitude, longitude) {
@@ -93,5 +98,13 @@ export const api = {
   },
   getSimulationStatus() {
     return request('/simulation/status');
+  },
+
+  // System mode (Simulation vs Live GPS)
+  getMode() {
+    return request('/system/mode');
+  },
+  setMode(mode) {
+    return request('/system/mode', { method: 'POST', body: { mode } });
   }
 };

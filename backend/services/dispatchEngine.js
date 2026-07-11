@@ -78,7 +78,53 @@ function autoAssignAmbulance(emergencyId) {
   return db.getAmbulanceById(nearestAmbulance.id);
 }
 
+/**
+ * Live-mode dispatch: offers the emergency to the nearest available ambulance
+ * that hasn't already been offered it (and declined/is being skipped), without
+ * locking the ambulance as Busy. The driver app must call /dispatch/accept to
+ * actually commit the assignment, or /dispatch/reject to move to the next one.
+ *
+ * @param {string} emergencyId The UUID of the emergency
+ * @param {string[]} excludedIds Ambulance IDs to skip (already offered/rejected)
+ * @returns {{emergency: Object|null, ambulance: Object|null, distance: number|null}}
+ */
+function offerNearestAmbulance(emergencyId, excludedIds = []) {
+  const emergency = db.getEmergencyById(emergencyId);
+  if (!emergency) {
+    return { emergency: null, ambulance: null, distance: null };
+  }
+
+  const candidates = findNearestAvailableAmbulances(
+    emergency.latitude,
+    emergency.longitude
+  ).filter(amb => !excludedIds.includes(amb.id));
+
+  if (candidates.length === 0) {
+    const exhaustedEmergency = db.updateEmergency(emergencyId, {
+      status: 'Pending',
+      assigned_ambulance: null,
+      offered_to: excludedIds
+    });
+    return { emergency: exhaustedEmergency, ambulance: null, distance: null };
+  }
+
+  const nearest = candidates[0];
+
+  const offeredEmergency = db.updateEmergency(emergencyId, {
+    status: 'Offered',
+    assigned_ambulance: nearest.id,
+    offered_to: [...excludedIds, nearest.id]
+  });
+
+  return {
+    emergency: offeredEmergency,
+    ambulance: db.getAmbulanceById(nearest.id),
+    distance: nearest.distance
+  };
+}
+
 module.exports = {
   findNearestAvailableAmbulances,
-  autoAssignAmbulance
+  autoAssignAmbulance,
+  offerNearestAmbulance
 };

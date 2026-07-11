@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
-import { Search, Plus, Trash2, Edit3, MapPin, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { Search, Plus, Trash2, Edit3, MapPin, CheckCircle2, ShieldAlert, Radio } from 'lucide-react';
 
+// Ambulances can be managed two ways: manually here (for vehicles with no
+// driver phone) or live from the driver app (see driver-app/). Both write to
+// the same backend, so either can create/move/update an ambulance.
 const Sidebar = ({
   ambulances,
   emergencies,
@@ -65,6 +68,7 @@ const Sidebar = ({
     switch (status) {
       case 'Pending': return 'bg-blue-500/20 text-blue-400 border-blue-500/40 animate-pulse';
       case 'Assigned': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40';
+      case 'VICTIM_PICKED': return 'bg-purple-500/20 text-purple-400 border-purple-500/40';
       case 'Resolved': return 'bg-slate-700/40 text-slate-500 border-slate-700';
       default: return 'bg-slate-700 text-slate-300';
     }
@@ -134,7 +138,10 @@ const Sidebar = ({
         {activeTab === 'ambulances' ? (
           <>
             <div className="flex justify-between items-center mb-1">
-              <span className="text-xs font-bold tracking-wide text-slate-400">AMBULANCE REGISTRY</span>
+              <span className="text-xs font-bold tracking-wide text-slate-400 flex items-center gap-1.5">
+                AMBULANCE REGISTRY
+                <Radio className="w-3 h-3 text-brand-green" title="Phone-linked ambulances update live" />
+              </span>
               <button
                 onClick={onAddAmbulanceClick}
                 className="flex items-center gap-1 px-2 py-1 bg-brand-blue hover:bg-blue-600 text-slate-100 rounded text-[10px] font-bold shadow-md shadow-blue-900/10 transition-colors"
@@ -249,7 +256,12 @@ const Sidebar = ({
 
                     <div className="flex justify-between items-center text-[10px] text-slate-400 mt-2 border-t border-dark-border/40 pt-2">
                       <div className="flex items-center gap-1 font-semibold text-slate-500">
-                        {emp.status === 'Assigned' ? (
+                        {emp.status === 'VICTIM_PICKED' ? (
+                          <>
+                            <CheckCircle2 className="w-3.5 h-3.5 text-purple-400" />
+                            <span className="text-purple-300 truncate max-w-[120px]">Victim picked up · {assignedAmbName}</span>
+                          </>
+                        ) : emp.status === 'Assigned' ? (
                           <>
                             <CheckCircle2 className="w-3.5 h-3.5 text-brand-green" />
                             <span className="text-slate-300 truncate max-w-[120px]">{assignedAmbName}</span>

@@ -1,5 +1,6 @@
 const db = require('../database/db');
 const { calculateDistance } = require('../utils/haversine');
+const modeService = require('./modeService');
 
 let simulationInterval = null;
 let ioInstance = null;
@@ -51,6 +52,7 @@ function resetSimulation(io) {
 
 function tickSimulation() {
   if (!ioInstance) return;
+  if (modeService.getMode() !== 'simulation') return;
 
   const ambulances = db.getAmbulances();
   const emergencies = db.getEmergencies();

@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+
 const SocketContext = createContext(null);
 
 export const useSocket = () => {
@@ -17,9 +19,10 @@ export const SocketProvider = ({ children }) => {
   const [emergencies, setEmergencies] = useState([]);
   const [isSimulating, setIsSimulating] = useState(false);
   const [connected, setConnected] = useState(false);
+  const [mode, setModeState] = useState('simulation'); // 'simulation' | 'live'
 
   useEffect(() => {
-    const socketInstance = io('http://localhost:5000', {
+    const socketInstance = io(SOCKET_URL, {
       transports: ['websocket', 'polling']
     });
 
@@ -94,6 +97,11 @@ export const SocketProvider = ({ children }) => {
       setIsSimulating(false);
     });
 
+    // System mode (Simulation vs Live GPS), broadcast on connect and on change
+    socketInstance.on('system:mode', ({ mode: newMode }) => {
+      setModeState(newMode);
+    });
+
     setSocket(socketInstance);
 
     return () => {
@@ -111,7 +119,8 @@ export const SocketProvider = ({ children }) => {
         setEmergencies,
         isSimulating,
         setIsSimulating,
-        connected
+        connected,
+        mode
       }}
     >
       {children}

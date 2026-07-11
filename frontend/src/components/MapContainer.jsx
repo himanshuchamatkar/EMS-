@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { MapContainer as LeafletMap, TileLayer, Marker, Popup, Polyline, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 
@@ -136,8 +136,8 @@ const MapContainer = ({
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        <MapEvents 
-          onClick={onMapClick} 
+        <MapEvents
+          onClick={onMapClick}
           onDoubleClick={onDoubleClickMap}
           onRightClick={onRightClickMap}
         />

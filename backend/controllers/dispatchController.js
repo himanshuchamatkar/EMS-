@@ -1,5 +1,5 @@
 const db = require('../database/db');
-const { findNearestAvailableAmbulances } = require('../services/dispatchEngine');
+const { findNearestAvailableAmbulances, offerNearestAmbulance } = require('../services/dispatchEngine');
 
 exports.findNearest = (req, res) => {
   try {
@@ -142,6 +142,170 @@ exports.cancelAssignment = (req, res) => {
       message: 'Assignment cancelled successfully',
       emergency: updatedEmergency,
       ambulance: updatedAmbulance
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Driver app accepts a dispatch:offer sent while in Live mode.
+exports.acceptOffer = (req, res) => {
+  try {
+    const { emergency_id, ambulance_id } = req.body;
+
+    if (!emergency_id || !ambulance_id) {
+      return res.status(400).json({ error: 'Missing emergency_id or ambulance_id' });
+    }
+
+    const emergency = db.getEmergencyById(emergency_id);
+    if (!emergency) {
+      return res.status(404).json({ error: 'Emergency not found' });
+    }
+
+    const ambulance = db.getAmbulanceById(ambulance_id);
+    if (!ambulance) {
+      return res.status(404).json({ error: 'Ambulance not found' });
+    }
+
+    if (emergency.status !== 'Offered' || emergency.assigned_ambulance !== ambulance_id) {
+      return res.status(400).json({ error: 'This emergency is not currently offered to this ambulance' });
+    }
+
+    const updatedAmbulance = db.updateAmbulance(ambulance_id, {
+      status: 'Busy',
+      speed: 40
+    });
+
+    const updatedEmergency = db.updateEmergency(emergency_id, {
+      status: 'Assigned'
+    });
+
+    const log = db.addDispatchLog({
+      emergency_id,
+      ambulance_id,
+      status: 'Dispatched'
+    });
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('dispatch:assigned', {
+        emergency: updatedEmergency,
+        ambulance: updatedAmbulance,
+        log
+      });
+      io.emit('ambulance:updated', updatedAmbulance);
+      io.emit('emergency:updated', updatedEmergency);
+      io.emit('ambulances:list', db.getAmbulances());
+      io.emit('emergencies:list', db.getEmergencies());
+    }
+
+    res.json({
+      message: 'Offer accepted, ambulance dispatched',
+      emergency: updatedEmergency,
+      ambulance: updatedAmbulance
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Driver app rejects a dispatch:offer; backend re-offers to the next nearest ambulance.
+exports.rejectOffer = (req, res) => {
+  try {
+    const { emergency_id, ambulance_id } = req.body;
+
+    if (!emergency_id || !ambulance_id) {
+      return res.status(400).json({ error: 'Missing emergency_id or ambulance_id' });
+    }
+
+    const emergency = db.getEmergencyById(emergency_id);
+    if (!emergency) {
+      return res.status(404).json({ error: 'Emergency not found' });
+    }
+
+    if (emergency.status !== 'Offered' || emergency.assigned_ambulance !== ambulance_id) {
+      return res.status(400).json({ error: 'This emergency is not currently offered to this ambulance' });
+    }
+
+    const excludedIds = emergency.offered_to && emergency.offered_to.length > 0
+      ? emergency.offered_to
+      : [ambulance_id];
+
+    const { emergency: nextEmergency, ambulance: nextAmbulance, distance } = offerNearestAmbulance(emergency_id, excludedIds);
+
+    const io = req.app.get('io');
+
+    if (nextAmbulance) {
+      if (io) {
+        io.to(`ambulance:${nextAmbulance.id}`).emit('dispatch:offer', { emergency: nextEmergency, distance });
+        io.emit('emergency:updated', nextEmergency);
+        io.emit('emergencies:list', db.getEmergencies());
+      }
+      return res.json({
+        message: 'Offer rejected, re-offered to next nearest ambulance',
+        emergency: nextEmergency,
+        offered_to_ambulance: nextAmbulance
+      });
+    }
+
+    if (io) {
+      io.emit('dispatch:offer:exhausted', { emergency_id });
+      io.emit('emergency:updated', nextEmergency);
+      io.emit('emergencies:list', db.getEmergencies());
+    }
+    res.json({
+      message: 'Offer rejected. No further available ambulances to offer to.',
+      emergency: nextEmergency,
+      offered_to_ambulance: null
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Driver app confirms the victim is on board at the scene. This does NOT
+// resolve the incident or free the ambulance (still en route, e.g. to a
+// hospital) — it just records the VICTIM_PICKED milestone with a timestamp,
+// so the admin panel can reflect it live via Socket.IO.
+exports.pickupVictim = (req, res) => {
+  try {
+    const { emergency_id, ambulance_id } = req.body;
+
+    if (!emergency_id || !ambulance_id) {
+      return res.status(400).json({ error: 'Missing emergency_id or ambulance_id' });
+    }
+
+    const emergency = db.getEmergencyById(emergency_id);
+    if (!emergency) {
+      return res.status(404).json({ error: 'Emergency not found' });
+    }
+
+    if (emergency.status !== 'Assigned' || emergency.assigned_ambulance !== ambulance_id) {
+      return res.status(400).json({ error: 'This ambulance is not the active assignment for this emergency' });
+    }
+
+    const pickedUpAt = new Date().toISOString();
+
+    const updatedEmergency = db.updateEmergency(emergency_id, {
+      status: 'VICTIM_PICKED',
+      picked_up_at: pickedUpAt
+    });
+
+    db.updateDispatchLogForEmergency(emergency_id, {
+      status: 'PickedUp',
+      pickup_time: pickedUpAt
+    });
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('dispatch:victimPickedUp', { emergency_id, ambulance_id, picked_up_at: pickedUpAt });
+      io.emit('emergency:updated', updatedEmergency);
+      io.emit('emergencies:list', db.getEmergencies());
+    }
+
+    res.json({
+      message: 'Victim pickup recorded',
+      emergency: updatedEmergency
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

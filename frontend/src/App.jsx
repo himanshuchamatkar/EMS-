@@ -13,14 +13,16 @@ const App = () => {
     ambulances,
     emergencies,
     isSimulating,
-    connected
+    connected,
+    mode
   } = useSocket();
 
   // Selected items for map zooming / dispatch details
   const [selectedItem, setSelectedItem] = useState(null); // Ambulance or Emergency object
   const [selectedEmergency, setSelectedEmergency] = useState(null); // Currently focused emergency for dispatch panel
 
-  // Map interaction modes
+  // Map interaction modes — ambulances can be added/relocated manually here
+  // (for vehicles without a driver phone) alongside the driver app's own updates.
   const [mapClickMode, setMapClickMode] = useState(null); // 'add_ambulance' | 'create_emergency' | 'relocate_ambulance' | null
   const [pendingLocation, setPendingLocation] = useState(null); // { latitude, longitude }
   const [relocatingAmbulance, setRelocatingAmbulance] = useState(null);
@@ -84,16 +86,23 @@ const App = () => {
       addToast(`⚠️ Dispatch assignment cancelled.`, 'info');
     };
 
+    const handleVictimPickedUp = (data) => {
+      const ambName = ambulances.find(a => a.id === data.ambulance_id)?.name || 'Ambulance';
+      addToast(`🚑 ${ambName} has picked up the victim.`, 'success');
+    };
+
     socket.on('emergency:created', handleEmergencyCreated);
     socket.on('dispatch:assigned', handleDispatchAssigned);
     socket.on('dispatch:resolved', handleDispatchResolved);
     socket.on('dispatch:cancelled', handleDispatchCancelled);
+    socket.on('dispatch:victimPickedUp', handleVictimPickedUp);
 
     return () => {
       socket.off('emergency:created', handleEmergencyCreated);
       socket.off('dispatch:assigned', handleDispatchAssigned);
       socket.off('dispatch:resolved', handleDispatchResolved);
       socket.off('dispatch:cancelled', handleDispatchCancelled);
+      socket.off('dispatch:victimPickedUp', handleVictimPickedUp);
     };
   }, [socket, ambulances, selectedEmergency]);
 
@@ -243,17 +252,7 @@ const App = () => {
     if (!window.confirm('Delete this emergency log?')) return;
     try {
       await api.cancelAssignment(id).catch(() => {}); // Attempt cancellation if assigned
-      // We don't have a direct REST delete emergency endpoint in schema, but we can reset or delete it
-      // Let's implement delete emergency on backend if needed, but standard cancellation is sufficient. 
-      // For full support, let's treat "Delete Emergency" as clearing/resolving it or resetting.
-      // Wait, let's see if we should write a delete incident request.
-      // Actually, since there is no delete endpoint in TRD, we can just resolve it or cancel it.
-      // But wait! If they click delete in sidebar, we can trigger cancel, and if resolved, we don't have to delete.
-      // Actually, we can add a deleteEmergency function or mark it as Resolved. Let's make a delete emergency backend handler just in case! 
-      // Wait, we didn't add the DELETE /emergencies/:id route. Let's make sure our sidebar can delete it if they wish!
-      // In the database model, we wrote db.deleteEmergency(id). Let's implement the route in backend so it works fully!
-      // Let's call the DELETE route which deletes it from DB:
-      await fetch(`http://localhost:5000/api/emergencies/${id}`, { method: 'DELETE' });
+      await api.deleteEmergency(id);
       addToast('Incident log deleted.', 'info');
       
       if (selectedEmergency && selectedEmergency.id === id) {
@@ -346,6 +345,20 @@ const App = () => {
     }
   };
 
+  // System mode toggle: Simulation (server moves ambulances) vs Live (real driver-app GPS)
+  const handleToggleMode = async () => {
+    const nextMode = mode === 'simulation' ? 'live' : 'simulation';
+    if (nextMode === 'live' && !window.confirm('Switch to Live GPS mode? The movement simulation will pause, and new emergencies will be offered to driver apps instead of auto-assigned.')) {
+      return;
+    }
+    try {
+      await api.setMode(nextMode);
+      addToast(`Switched to ${nextMode === 'live' ? 'Live GPS' : 'Simulation'} mode.`, 'info');
+    } catch (err) {
+      addToast(`Failed to switch mode: ${err.message}`, 'danger');
+    }
+  };
+
   return (
     <div className="flex flex-col h-screen w-screen bg-dark-bg text-slate-100 overflow-hidden font-sans">
       
@@ -373,6 +386,20 @@ const App = () => {
             <span className={`w-2 h-2 rounded-full ${connected ? 'bg-brand-green animate-pulse' : 'bg-brand-red'}`} />
             <span>{connected ? 'LIVE CONNECTION' : 'OFFLINE'}</span>
           </div>
+
+          {/* Simulation vs Live GPS mode toggle */}
+          <button
+            onClick={handleToggleMode}
+            title="Toggle between simulated movement and real driver-app GPS"
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-[10px] font-bold uppercase tracking-wide transition-all ${
+              mode === 'live'
+                ? 'bg-brand-red/15 border-brand-red/40 text-brand-red'
+                : 'bg-slate-900/60 border-dark-border/80 text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <span className={`w-2 h-2 rounded-full ${mode === 'live' ? 'bg-brand-red animate-pulse' : 'bg-slate-500'}`} />
+            <span>{mode === 'live' ? 'Live GPS Mode' : 'Simulation Mode'}</span>
+          </button>
 
           {/* Simulation Controllers */}
           <div className="flex items-center bg-slate-900 border border-dark-border rounded-lg p-0.5 overflow-hidden">

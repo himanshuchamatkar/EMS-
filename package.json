@@ -3,9 +3,10 @@
   "version": "1.0.0",
   "description": "Smart Ambulance Tracking & Dispatch Prototype dashboard",
   "scripts": {
-    "install:all": "npm install && npm install --prefix backend && npm install --prefix frontend",
+    "install:all": "npm install && npm install --prefix backend && npm install --prefix frontend && npm install --prefix driver-app",
     "backend": "npm run dev --prefix backend",
     "frontend": "npm run dev --prefix frontend",
+    "driver": "npm start --prefix driver-app",
     "dev": "concurrently \"npm run backend\" \"npm run frontend\""
   },
   "devDependencies": {
