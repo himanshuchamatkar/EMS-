@@ -1,5 +1,35 @@
 const db = require('../database/db');
 
+const MAX_ACCURACY_METERS = 100;
+const MAX_SPEED_KMH = 180;
+
+/** Returns an error message if a GPS-bearing update is physically implausible, else null. */
+function validateLocationUpdate(updates) {
+  const { latitude, longitude, accuracy, speed } = updates;
+
+  if (latitude !== undefined) {
+    if (typeof latitude !== 'number' || Number.isNaN(latitude) || latitude < -90 || latitude > 90) {
+      return 'latitude must be a number between -90 and 90';
+    }
+  }
+  if (longitude !== undefined) {
+    if (typeof longitude !== 'number' || Number.isNaN(longitude) || longitude < -180 || longitude > 180) {
+      return 'longitude must be a number between -180 and 180';
+    }
+  }
+  if (accuracy !== undefined) {
+    if (typeof accuracy !== 'number' || Number.isNaN(accuracy) || accuracy < 0 || accuracy > MAX_ACCURACY_METERS) {
+      return `accuracy must be a number between 0 and ${MAX_ACCURACY_METERS} meters`;
+    }
+  }
+  if (speed !== undefined) {
+    if (typeof speed !== 'number' || Number.isNaN(speed) || speed < 0 || speed > MAX_SPEED_KMH) {
+      return `speed must be a number between 0 and ${MAX_SPEED_KMH} km/h`;
+    }
+  }
+  return null;
+}
+
 exports.getAmbulances = (req, res) => {
   try {
     const list = db.getAmbulances();
@@ -58,6 +88,11 @@ exports.updateAmbulance = (req, res) => {
     const currentAmbulance = db.getAmbulanceById(id);
     if (!currentAmbulance) {
       return res.status(404).json({ error: 'Ambulance not found' });
+    }
+
+    const validationError = validateLocationUpdate(updates);
+    if (validationError) {
+      return res.status(400).json({ error: `Invalid GPS update rejected: ${validationError}` });
     }
 
     // Check if status changed

@@ -1,24 +1,28 @@
 import { useEffect, useRef, useState } from 'react';
+import type { LocationSubscription } from 'expo-location';
 import { api } from '../services/api';
-import { requestLocationPermission, getCurrentCoords, type Coords as TrackedCoords } from '../services/location';
+import { requestLocationPermission, watchCoords, type Coords as TrackedCoords } from '../services/location';
+import { filterCoords } from '../utils/locationFilters';
 
 export type { TrackedCoords };
 
-const POLL_INTERVAL_MS = 5000;
-
 /**
- * Foreground-only GPS loop (MVP scope — see plan). While `online`, reads the
- * device's position every 5s and PUTs it to the existing
+ * Foreground navigation-grade GPS tracking. While `online`, subscribes to a
+ * continuous native location watch (BestForNavigation, 2s/5m cadence),
+ * drops fixes that fail sanity checks (poor accuracy, impossible jumps,
+ * unrealistic speed), and PUTs the rest to the existing
  * `/api/ambulances/:id` endpoint, which already broadcasts `ambulance:updated`
  * to the admin panel — no new backend endpoint needed for this.
  */
 export function useLocationTracking(ambulanceId: string | null, online: boolean) {
   const [coords, setCoords] = useState<TrackedCoords | null>(null);
   const [permissionError, setPermissionError] = useState<string | null>(null);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastAcceptedRef = useRef<TrackedCoords | null>(null);
 
   useEffect(() => {
     let cancelled = false;
+    let subscription: LocationSubscription | null = null;
+    lastAcceptedRef.current = null;
 
     async function start() {
       if (!online || !ambulanceId) return;
@@ -32,37 +36,37 @@ export function useLocationTracking(ambulanceId: string | null, online: boolean)
       }
       if (!cancelled) setPermissionError(null);
 
-      const pushLocation = async () => {
-        try {
-          const next = await getCurrentCoords();
-          if (cancelled) return;
+      subscription = await watchCoords((raw) => {
+        if (cancelled) return;
 
-          setCoords(next);
+        const accepted = filterCoords(raw, lastAcceptedRef.current);
+        if (!accepted) return;
 
-          await api.updateAmbulanceLocation(ambulanceId, {
-            latitude: next.latitude,
-            longitude: next.longitude,
-            ...(next.heading != null && next.heading >= 0 ? { heading: Math.round(next.heading) } : {}),
+        lastAcceptedRef.current = accepted;
+        setCoords(accepted);
+
+        api
+          .updateAmbulanceLocation(ambulanceId, {
+            latitude: accepted.latitude,
+            longitude: accepted.longitude,
+            accuracy: accepted.accuracy ?? undefined,
+            timestamp: accepted.timestamp,
+            ...(accepted.heading != null && accepted.heading >= 0 ? { heading: Math.round(accepted.heading) } : {}),
             // expo-location reports speed in m/s; the backend/admin panel display km/h.
-            ...(next.speed != null && next.speed >= 0 ? { speed: Math.round(next.speed * 3.6) } : {}),
+            ...(accepted.speed != null && accepted.speed >= 0 ? { speed: Math.round(accepted.speed * 3.6) } : {}),
+          })
+          .catch((err) => {
+            console.warn('Location push failed:', err instanceof Error ? err.message : err);
           });
-        } catch (err) {
-          console.warn('Location push failed:', err instanceof Error ? err.message : err);
-        }
-      };
-
-      await pushLocation();
-      intervalRef.current = setInterval(pushLocation, POLL_INTERVAL_MS);
+      });
     }
 
     start();
 
     return () => {
       cancelled = true;
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
+      subscription?.remove();
+      subscription = null;
     };
   }, [ambulanceId, online]);
 

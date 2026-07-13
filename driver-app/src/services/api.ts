@@ -17,7 +17,9 @@ client.interceptors.response.use(
   }
 );
 
-type LocationUpdate = Partial<Pick<Ambulance, 'latitude' | 'longitude' | 'heading' | 'speed'>>;
+type LocationUpdate = Partial<Pick<Ambulance, 'latitude' | 'longitude' | 'heading' | 'speed' | 'accuracy'>> & {
+  timestamp?: number;
+};
 
 interface CreateAmbulancePayload {
   name: string;

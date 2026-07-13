@@ -1,6 +1,54 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { MapContainer as LeafletMap, TileLayer, Marker, Popup, Polyline, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
+
+const MARKER_ANIMATION_MS = 900;
+
+// Wraps react-leaflet's Marker so ambulance position updates glide to their
+// new coordinate instead of snapping. The `position` prop only seeds the
+// marker's initial location; every subsequent move is driven by animating
+// the underlying Leaflet marker instance directly via `setLatLng`, so this
+// leaves the socket/data flow untouched.
+const AnimatedMarker = ({ position, children, ...markerProps }) => {
+  const markerRef = useRef(null);
+  const initialPosition = useRef(position);
+  const frameRef = useRef(null);
+
+  useEffect(() => {
+    const marker = markerRef.current;
+    if (!marker) return undefined;
+
+    const from = marker.getLatLng();
+    const to = L.latLng(position[0], position[1]);
+
+    if (from.equals(to)) return undefined;
+
+    if (frameRef.current) cancelAnimationFrame(frameRef.current);
+    const start = performance.now();
+
+    const step = (now) => {
+      const t = Math.min((now - start) / MARKER_ANIMATION_MS, 1);
+      marker.setLatLng([
+        from.lat + (to.lat - from.lat) * t,
+        from.lng + (to.lng - from.lng) * t
+      ]);
+      if (t < 1) {
+        frameRef.current = requestAnimationFrame(step);
+      }
+    };
+    frameRef.current = requestAnimationFrame(step);
+
+    return () => {
+      if (frameRef.current) cancelAnimationFrame(frameRef.current);
+    };
+  }, [position]);
+
+  return (
+    <Marker ref={markerRef} position={initialPosition.current} {...markerProps}>
+      {children}
+    </Marker>
+  );
+};
 
 // Leaflet click handler component
 const MapEvents = ({ onClick, onDoubleClick, onRightClick }) => {
@@ -161,7 +209,7 @@ const MapContainer = ({
 
         {/* Render Ambulances */}
         {ambulances.map(amb => (
-          <Marker
+          <AnimatedMarker
             key={amb.id}
             position={[amb.latitude, amb.longitude]}
             icon={getAmbulanceIcon(amb.status, amb.heading)}
@@ -197,7 +245,7 @@ const MapContainer = ({
                 </div>
               </div>
             </Popup>
-          </Marker>
+          </AnimatedMarker>
         ))}
 
         {/* Render Emergencies */}

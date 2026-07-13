@@ -173,8 +173,13 @@ const db = {
     };
     const updated = dbCache.ambulances[index];
 
+    // `accuracy`/`timestamp` are live GPS-quality metadata used for in-memory
+    // filtering and dashboard display, not part of the persisted schema —
+    // exclude them so an unknown column doesn't fail the whole write.
+    const { accuracy, timestamp, ...persistedUpdates } = updates;
+
     // Async write to Supabase in the background
-    supabase.from('ambulances').update(updates).eq('id', id).then(({ error }) => {
+    supabase.from('ambulances').update(persistedUpdates).eq('id', id).then(({ error }) => {
       if (error) console.error(`Error updating ambulance ${id} on Supabase:`, error);
     });
 

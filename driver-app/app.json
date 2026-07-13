@@ -8,7 +8,10 @@
     "userInterfaceStyle": "light",
     "extra": {
       "apiBaseUrl": "https://smart-ambulance-api-5ui6.onrender.com/api",
-      "socketUrl": "https://smart-ambulance-api-5ui6.onrender.com"
+      "socketUrl": "https://smart-ambulance-api-5ui6.onrender.com",
+      "eas": {
+        "projectId": "d690adbd-872f-474b-82e4-94608afb97cd"
+      }
     },
     "ios": {
       "supportsTablet": true,
@@ -26,8 +29,11 @@
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION"
-      ]
+        "ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ],
+      "package": "com.lavanya9932.driverapp"
     },
     "web": {
       "favicon": "./assets/favicon.png"

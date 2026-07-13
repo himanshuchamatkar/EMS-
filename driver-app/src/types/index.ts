@@ -12,6 +12,7 @@ export interface Ambulance {
   status: AmbulanceStatus;
   speed: number;
   heading: number;
+  accuracy?: number;
   created_at: string;
 }
 
