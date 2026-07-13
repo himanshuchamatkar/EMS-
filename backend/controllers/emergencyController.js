@@ -46,20 +46,25 @@ exports.createEmergency = (req, res) => {
     }
 
     if (modeService.getMode() === 'live') {
-      // Live mode: offer to the nearest driver's phone and wait for them to
-      // accept/reject instead of auto-assigning instantly (see dispatchController).
-      const { emergency: offeredEmergency, ambulance, distance } = offerNearestAmbulance(newEmergency.id);
+      // Live mode: offer to the nearest 2 drivers' phones and wait for them to
+      // accept/reject instead of auto-assigning instantly.
+      const { emergency: offeredEmergency, ambulances: offeredAmbulances, distances } = offerNearestAmbulance(newEmergency.id);
 
-      if (ambulance) {
+      if (offeredAmbulances && offeredAmbulances.length > 0) {
         if (io) {
-          io.to(`ambulance:${ambulance.id}`).emit('dispatch:offer', { emergency: offeredEmergency, distance });
+          offeredAmbulances.forEach((ambulance, idx) => {
+            io.to(`ambulance:${ambulance.id}`).emit('dispatch:offer', { 
+              emergency: offeredEmergency, 
+              distance: distances[idx] 
+            });
+          });
           io.emit('emergency:updated', offeredEmergency);
           io.emit('emergencies:list', db.getEmergencies());
         }
         return res.status(201).json({
-          message: 'Emergency created and offered to nearest driver',
+          message: `Emergency created and offered to nearest ${offeredAmbulances.length} driver(s)`,
           emergency: offeredEmergency,
-          offered_to_ambulance: ambulance
+          offered_to_ambulances: offeredAmbulances
         });
       }
 
@@ -71,7 +76,7 @@ exports.createEmergency = (req, res) => {
       return res.status(201).json({
         message: 'Emergency created. No available ambulances to offer to.',
         emergency: offeredEmergency,
-        offered_to_ambulance: null
+        offered_to_ambulances: []
       });
     }
 

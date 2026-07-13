@@ -229,8 +229,10 @@ const db = {
     // Update local cache
     dbCache.emergencies.push(newEmergency);
 
+    // Strip non-persisted in-memory fields before writing to Supabase
+    const { offered_to, rejected_by, ...persistedEmergency } = newEmergency;
     // Async write to Supabase in the background
-    supabase.from('emergencies').insert([newEmergency]).then(({ error }) => {
+    supabase.from('emergencies').insert([persistedEmergency]).then(({ error }) => {
       if (error) console.error('Error adding emergency to Supabase:', error);
     });
 
@@ -247,10 +249,15 @@ const db = {
     };
     const updated = dbCache.emergencies[index];
 
-    // Async write to Supabase in the background
-    supabase.from('emergencies').update(updates).eq('id', id).then(({ error }) => {
-      if (error) console.error(`Error updating emergency ${id} on Supabase:`, error);
-    });
+    // Strip non-persisted in-memory fields before writing to Supabase
+    const { offered_to, rejected_by, ...persistedUpdates } = updates;
+    
+    // If updates has keys to persist, perform update
+    if (Object.keys(persistedUpdates).length > 0) {
+      supabase.from('emergencies').update(persistedUpdates).eq('id', id).then(({ error }) => {
+        if (error) console.error(`Error updating emergency ${id} on Supabase:`, error);
+      });
+    }
 
     return updated;
   },

@@ -167,7 +167,8 @@ exports.acceptOffer = (req, res) => {
       return res.status(404).json({ error: 'Ambulance not found' });
     }
 
-    if (emergency.status !== 'Offered' || emergency.assigned_ambulance !== ambulance_id) {
+    // Verify this ambulance was offered and the emergency is still Offered
+    if (emergency.status !== 'Offered' || !emergency.offered_to || !emergency.offered_to.includes(ambulance_id)) {
       return res.status(400).json({ error: 'This emergency is not currently offered to this ambulance' });
     }
 
@@ -177,7 +178,8 @@ exports.acceptOffer = (req, res) => {
     });
 
     const updatedEmergency = db.updateEmergency(emergency_id, {
-      status: 'Assigned'
+      status: 'Assigned',
+      assigned_ambulance: ambulance_id
     });
 
     const log = db.addDispatchLog({
@@ -193,6 +195,13 @@ exports.acceptOffer = (req, res) => {
         ambulance: updatedAmbulance,
         log
       });
+
+      // Clear/cancel the offer screen for other offered drivers who didn't accept fast enough
+      const otherAmbulanceIds = (emergency.offered_to || []).filter(id => id !== ambulance_id);
+      otherAmbulanceIds.forEach(otherId => {
+        io.to(`ambulance:${otherId}`).emit('dispatch:offer:exhausted', { emergency_id });
+      });
+
       io.emit('ambulance:updated', updatedAmbulance);
       io.emit('emergency:updated', updatedEmergency);
       io.emit('ambulances:list', db.getAmbulances());
@@ -223,39 +232,79 @@ exports.rejectOffer = (req, res) => {
       return res.status(404).json({ error: 'Emergency not found' });
     }
 
-    if (emergency.status !== 'Offered' || emergency.assigned_ambulance !== ambulance_id) {
+    if (emergency.status !== 'Offered' || !emergency.offered_to || !emergency.offered_to.includes(ambulance_id)) {
       return res.status(400).json({ error: 'This emergency is not currently offered to this ambulance' });
     }
 
-    const excludedIds = emergency.offered_to && emergency.offered_to.length > 0
-      ? emergency.offered_to
-      : [ambulance_id];
-
-    const { emergency: nextEmergency, ambulance: nextAmbulance, distance } = offerNearestAmbulance(emergency_id, excludedIds);
+    // Record this driver rejection
+    let rejectedBy = emergency.rejected_by || [];
+    if (!rejectedBy.includes(ambulance_id)) {
+      rejectedBy.push(ambulance_id);
+    }
 
     const io = req.app.get('io');
+    if (io) {
+      // Clear screen of rejecting driver immediately
+      io.to(`ambulance:${ambulance_id}`).emit('dispatch:offer:exhausted', { emergency_id });
+    }
 
-    if (nextAmbulance) {
+    // Try to find the next candidate available driver to maintain the dual-driver offer pool
+    const excludedIds = emergency.offered_to || [];
+    const { emergency: nextEmergency, ambulances: nextAmbulances, distances } = offerNearestAmbulance(emergency_id, excludedIds);
+
+    let updatedEmergency = nextEmergency || emergency;
+    updatedEmergency = db.updateEmergency(emergency_id, {
+      rejected_by: rejectedBy
+    });
+
+    if (nextAmbulances && nextAmbulances.length > 0) {
+      const nextAmbulance = nextAmbulances[0];
+      const distance = distances[0];
+
       if (io) {
-        io.to(`ambulance:${nextAmbulance.id}`).emit('dispatch:offer', { emergency: nextEmergency, distance });
-        io.emit('emergency:updated', nextEmergency);
+        io.to(`ambulance:${nextAmbulance.id}`).emit('dispatch:offer', { emergency: updatedEmergency, distance });
+        io.emit('emergency:updated', updatedEmergency);
         io.emit('emergencies:list', db.getEmergencies());
       }
+
       return res.json({
-        message: 'Offer rejected, re-offered to next nearest ambulance',
-        emergency: nextEmergency,
+        message: 'Offer rejected, re-offered to next nearest available ambulance',
+        emergency: updatedEmergency,
         offered_to_ambulance: nextAmbulance
       });
     }
 
+    // No new candidates are available. Check if everyone we offered it to has rejected
+    const activeOffersCount = (updatedEmergency.offered_to || []).filter(id => !rejectedBy.includes(id)).length;
+
+    if (activeOffersCount === 0) {
+      const exhaustedEmergency = db.updateEmergency(emergency_id, {
+        status: 'Pending',
+        assigned_ambulance: null
+      });
+
+      if (io) {
+        io.emit('dispatch:offer:exhausted', { emergency_id });
+        io.emit('emergency:updated', exhaustedEmergency);
+        io.emit('emergencies:list', db.getEmergencies());
+      }
+
+      return res.json({
+        message: 'Offer rejected. No more available ambulances to offer to.',
+        emergency: exhaustedEmergency,
+        offered_to_ambulance: null
+      });
+    }
+
+    // Waiting for other driver to accept/reject
     if (io) {
-      io.emit('dispatch:offer:exhausted', { emergency_id });
-      io.emit('emergency:updated', nextEmergency);
+      io.emit('emergency:updated', updatedEmergency);
       io.emit('emergencies:list', db.getEmergencies());
     }
+
     res.json({
-      message: 'Offer rejected. No further available ambulances to offer to.',
-      emergency: nextEmergency,
+      message: 'Offer rejected. Waiting for other offered drivers to respond.',
+      emergency: updatedEmergency,
       offered_to_ambulance: null
     });
   } catch (error) {

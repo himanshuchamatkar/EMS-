@@ -91,7 +91,7 @@ function autoAssignAmbulance(emergencyId) {
 function offerNearestAmbulance(emergencyId, excludedIds = []) {
   const emergency = db.getEmergencyById(emergencyId);
   if (!emergency) {
-    return { emergency: null, ambulance: null, distance: null };
+    return { emergency: null, ambulances: [], distances: [] };
   }
 
   const candidates = findNearestAvailableAmbulances(
@@ -105,21 +105,23 @@ function offerNearestAmbulance(emergencyId, excludedIds = []) {
       assigned_ambulance: null,
       offered_to: excludedIds
     });
-    return { emergency: exhaustedEmergency, ambulance: null, distance: null };
+    return { emergency: exhaustedEmergency, ambulances: [], distances: [] };
   }
 
-  const nearest = candidates[0];
+  // Offer to up to the nearest 2 candidate drivers
+  const nearestCandidates = candidates.slice(0, 2);
+  const candidateIds = nearestCandidates.map(c => c.id);
 
   const offeredEmergency = db.updateEmergency(emergencyId, {
     status: 'Offered',
-    assigned_ambulance: nearest.id,
-    offered_to: [...excludedIds, nearest.id]
+    assigned_ambulance: null, // Keep null during active dual offer
+    offered_to: [...excludedIds, ...candidateIds]
   });
 
   return {
     emergency: offeredEmergency,
-    ambulance: db.getAmbulanceById(nearest.id),
-    distance: nearest.distance
+    ambulances: nearestCandidates,
+    distances: nearestCandidates.map(c => c.distance)
   };
 }
 
