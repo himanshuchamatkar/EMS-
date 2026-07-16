@@ -1,5 +1,5 @@
 /**
- * Self-contained Leaflet/OpenStreetMap page for the NavigationScreen WebView.
+ * Self-contained Leaflet/OpenStreetMap page for the MapScreen WebView.
  * Mirrors frontend/src/components/MapContainer.jsx's tile source and marker
  * approach so the driver app's map looks and behaves like the admin panel's.
  *
@@ -44,6 +44,15 @@ export const LEAFLET_MAP_HTML = `<!DOCTYPE html>
     var didInitialFit = false;
 
     function render(data) {
+      if (data.command === 'recenter') {
+        if (ambMarker && incMarker) {
+          map.fitBounds(L.latLngBounds([ambMarker.getLatLng(), incMarker.getLatLng()]), { padding: [40, 40] });
+        } else if (ambMarker) {
+          map.setView(ambMarker.getLatLng(), 15);
+        }
+        return;
+      }
+
       var amb = data.ambulance;
       var inc = data.emergency;
 
