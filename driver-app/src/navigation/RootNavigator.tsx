@@ -3,8 +3,7 @@ import { ActivityIndicator, View } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import type { RootStackParamList } from './types';
 import LoginScreen from '../screens/LoginScreen';
-import HomeScreen from '../screens/HomeScreen';
-import NavigationScreen from '../screens/NavigationScreen';
+import MainTabNavigator from './MainTabNavigator';
 import { useDriverSession } from '../hooks/useDriverSession';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -21,10 +20,9 @@ export default function RootNavigator() {
   }
 
   return (
-    <Stack.Navigator initialRouteName={identity ? 'Home' : 'Login'} screenOptions={{ headerShown: false }}>
+    <Stack.Navigator initialRouteName={identity ? 'Main' : 'Login'} screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen name="Home" component={HomeScreen} />
-      <Stack.Screen name="Navigation" component={NavigationScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Main" component={MainTabNavigator} />
     </Stack.Navigator>
   );
 }

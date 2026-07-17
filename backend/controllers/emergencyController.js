@@ -1,5 +1,5 @@
 const db = require('../database/db');
-const { autoAssignAmbulance, offerNearestAmbulance } = require('../services/dispatchEngine');
+const { autoAssignAmbulance, offerToAllCandidates } = require('../services/dispatchEngine');
 const modeService = require('../services/modeService');
 
 exports.getEmergencies = (req, res) => {
@@ -25,18 +25,29 @@ exports.getEmergencyById = (req, res) => {
 
 exports.createEmergency = (req, res) => {
   try {
-    const { latitude, longitude, priority, description } = req.body;
+    const { latitude, longitude, priority, description, photo_url, video_url, audio_url, report_source } = req.body;
 
     if (latitude === undefined || longitude === undefined || !priority) {
       return res.status(400).json({ error: 'Missing required fields: latitude, longitude, priority' });
     }
+
+    // report_source distinguishes citizen-app reports from admin-panel-created
+    // ones (see backend/supabase/citizen_reports.sql) — defaults to 'admin' so
+    // the existing admin panel, which doesn't send this field, is unaffected.
+    // Citizen reports may optionally carry Cloudinary URLs for attached media;
+    // everything downstream (dispatch engine, driver app) is unchanged either way.
+    const source = report_source === 'citizen' ? 'citizen' : 'admin';
 
     // Create the emergency (initially Pending)
     const newEmergency = db.addEmergency({
       latitude: Number(latitude),
       longitude: Number(longitude),
       priority,
-      description: description || 'Emergency incident reported'
+      description: description || 'Emergency incident reported',
+      photo_url: photo_url || null,
+      video_url: video_url || null,
+      audio_url: audio_url || null,
+      report_source: source
     });
 
     const io = req.app.get('io');
@@ -46,23 +57,24 @@ exports.createEmergency = (req, res) => {
     }
 
     if (modeService.getMode() === 'live') {
-      // Live mode: offer to the nearest 2 drivers' phones and wait for them to
-      // accept/reject instead of auto-assigning instantly.
-      const { emergency: offeredEmergency, ambulances: offeredAmbulances, distances } = offerNearestAmbulance(newEmergency.id);
+      // Live mode, "First Responder Wins": broadcast the offer to every
+      // available ambulance in range simultaneously and wait for the first
+      // ACCEPT instead of auto-assigning instantly.
+      const { emergency: offeredEmergency, ambulances: offeredAmbulances, distances } = offerToAllCandidates(newEmergency.id);
 
       if (offeredAmbulances && offeredAmbulances.length > 0) {
         if (io) {
           offeredAmbulances.forEach((ambulance, idx) => {
-            io.to(`ambulance:${ambulance.id}`).emit('dispatch:offer', { 
-              emergency: offeredEmergency, 
-              distance: distances[idx] 
+            io.to(`ambulance:${ambulance.id}`).emit('dispatch:offer', {
+              emergency: offeredEmergency,
+              distance: distances[idx]
             });
           });
           io.emit('emergency:updated', offeredEmergency);
           io.emit('emergencies:list', db.getEmergencies());
         }
         return res.status(201).json({
-          message: `Emergency created and offered to nearest ${offeredAmbulances.length} driver(s)`,
+          message: `Emergency created and offered to ${offeredAmbulances.length} nearby driver(s) simultaneously`,
           emergency: offeredEmergency,
           offered_to_ambulances: offeredAmbulances
         });

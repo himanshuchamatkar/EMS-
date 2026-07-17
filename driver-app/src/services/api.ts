@@ -32,7 +32,7 @@ interface CreateAmbulancePayload {
 interface OfferResponse {
   message: string;
   emergency: Emergency | null;
-  offered_to_ambulance: Ambulance | null;
+  offered_to_ambulances: Ambulance[];
 }
 
 interface AcceptResponse {

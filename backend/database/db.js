@@ -262,6 +262,47 @@ const db = {
     return updated;
   },
 
+  /**
+   * "First Responder Wins" atomic lock: transitions an emergency from
+   * Offered -> Assigned for exactly one ambulance. The read-check-write here
+   * is a single synchronous block (no `await` anywhere in it), and Node's
+   * event loop can't preempt a synchronous function mid-execution — so even
+   * if two /dispatch/accept requests for the same emergency arrive back to
+   * back, the second one always observes the first one's write and loses.
+   * Returns { error: null, emergency } on success, or
+   * { error: 'not_found' | 'already_assigned' | 'not_offered', emergency }.
+   */
+  lockEmergencyForAmbulance(emergencyId, ambulanceId) {
+    const index = dbCache.emergencies.findIndex(emp => emp.id === emergencyId);
+    if (index === -1) return { error: 'not_found', emergency: null };
+
+    const emergency = dbCache.emergencies[index];
+
+    if (emergency.assigned_ambulance) {
+      return { error: 'already_assigned', emergency };
+    }
+    if (emergency.status !== 'Offered' || !(emergency.offered_to || []).includes(ambulanceId)) {
+      return { error: 'not_offered', emergency };
+    }
+
+    dbCache.emergencies[index] = {
+      ...emergency,
+      status: 'Assigned',
+      assigned_ambulance: ambulanceId
+    };
+    const updated = dbCache.emergencies[index];
+
+    // Async write to Supabase in the background
+    supabase.from('emergencies').update({
+      status: 'Assigned',
+      assigned_ambulance: ambulanceId
+    }).eq('id', emergencyId).then(({ error }) => {
+      if (error) console.error(`Error locking emergency ${emergencyId} on Supabase:`, error);
+    });
+
+    return { error: null, emergency: updated };
+  },
+
   deleteEmergency(id) {
     const index = dbCache.emergencies.findIndex(emp => emp.id === id);
     if (index === -1) return false;
