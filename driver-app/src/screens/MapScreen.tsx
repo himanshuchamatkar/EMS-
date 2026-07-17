@@ -13,6 +13,7 @@ import PlaceholderBody from '../components/PlaceholderBody';
 import IncidentMilestoneSheet from '../components/IncidentMilestoneSheet';
 import HospitalListPanel from '../components/HospitalListPanel';
 import HospitalAssignedPanel from '../components/HospitalAssignedPanel';
+import HandoverCompletePanel from '../components/HandoverCompletePanel';
 
 /**
  * Live view for the ambulance's active incident — lives inside the Map tab
@@ -30,12 +31,14 @@ export default function MapScreen() {
     hospitalArrivedAt,
     selectedHospital,
     hospitalNavigationStarted,
+    handoverDurationMinutes,
     markArrivedAtScene,
     markArrivedAtHospital,
     confirmPickup,
     confirmDropoff,
     selectHospital,
     startHospitalNavigation,
+    completeIncident,
   } = useActiveIncident();
 
   const webViewRef = useRef<WebView>(null);
@@ -100,6 +103,20 @@ export default function MapScreen() {
           icon={<Feather name="map" size={26} color={theme.inkFaint} />}
           title="No active incident"
           subtitle="The live map appears here once you accept an incident."
+        />
+      </View>
+    );
+  }
+
+  if (stage === 'handoverComplete') {
+    return (
+      <View style={styles.container}>
+        {header()}
+        <HandoverCompletePanel
+          emergency={emergency}
+          hospital={selectedHospital}
+          durationMinutes={handoverDurationMinutes}
+          onComplete={completeIncident}
         />
       </View>
     );

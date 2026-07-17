@@ -1,0 +1,52 @@
+{
+  "expo": {
+    "name": "citizen-app",
+    "slug": "citizen-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "extra": {
+      "apiBaseUrl": "https://smart-ambulance-api-5ui6.onrender.com/api",
+      "socketUrl": "https://smart-ambulance-api-5ui6.onrender.com",
+      "cloudinaryCloudName": "dibt1wwpz",
+      "cloudinaryUploadPreset": "citizen_app_unsigned"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Smart EMS needs your location to accurately report emergencies and route help to you."
+      }
+    },
+    "android": {
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ],
+      "package": "com.lavanya9932.citizenapp"
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Smart EMS needs your location to accurately report emergencies and route help to you."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Smart EMS needs camera access so you can attach photos or video to an emergency report.",
+          "microphonePermission": "Smart EMS needs microphone access so you can attach an audio statement to an emergency report.",
+          "recordAudioAndroid": true
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Smart EMS needs camera access so you can attach photos or video to an emergency report.",
+          "microphonePermission": "Smart EMS needs microphone access to include audio when you attach a video."
+        }
+      ]
+    ]
+  }
+}

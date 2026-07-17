@@ -5,7 +5,7 @@ import type { MockHospital } from '../data/mockHospitals';
 import { api } from '../services/api';
 import { useDriverSession } from './useDriverSession';
 
-export type IncidentStage = 'toScene' | 'arrivedAtScene' | 'toHospital' | 'arrivedAtHospital';
+export type IncidentStage = 'toScene' | 'arrivedAtScene' | 'toHospital' | 'arrivedAtHospital' | 'handoverComplete';
 
 interface ActiveIncidentValue {
   emergency: Emergency | null;
@@ -16,6 +16,8 @@ interface ActiveIncidentValue {
   selectedHospital: MockHospital | null;
   /** True once the driver taps "Start Navigation" on the Hospital Assigned screen. */
   hospitalNavigationStarted: boolean;
+  /** Frozen at drop-off confirmation (accept → hand-off), for the "Handover Complete" summary. */
+  handoverDurationMinutes: number | null;
   startIncident: (emergency: Emergency) => void;
   markArrivedAtScene: () => void;
   markArrivedAtHospital: () => void;
@@ -23,6 +25,8 @@ interface ActiveIncidentValue {
   confirmDropoff: (ambulanceId: string) => Promise<boolean>;
   selectHospital: (hospital: MockHospital) => void;
   startHospitalNavigation: () => void;
+  /** "Complete Incident" on the Handover Complete screen — clears all active-incident state. */
+  completeIncident: () => void;
 }
 
 const ActiveIncidentContext = createContext<ActiveIncidentValue | null>(null);
@@ -43,6 +47,8 @@ export function ActiveIncidentProvider({ children }: { children: ReactNode }) {
   const [hospitalArrivedAt, setHospitalArrivedAt] = useState<number | null>(null);
   const [selectedHospital, setSelectedHospital] = useState<MockHospital | null>(null);
   const [hospitalNavigationStarted, setHospitalNavigationStarted] = useState(false);
+  const [handoverDurationMinutes, setHandoverDurationMinutes] = useState<number | null>(null);
+  const incidentStartedAtRef = useRef<number | null>(null);
   const emergencyRef = useRef<Emergency | null>(null);
 
   useEffect(() => {
@@ -56,6 +62,8 @@ export function ActiveIncidentProvider({ children }: { children: ReactNode }) {
     setHospitalArrivedAt(null);
     setSelectedHospital(null);
     setHospitalNavigationStarted(false);
+    setHandoverDurationMinutes(null);
+    incidentStartedAtRef.current = null;
   };
 
   // Previously (single full-screen NavigationScreen) there was no way to learn
@@ -80,6 +88,8 @@ export function ActiveIncidentProvider({ children }: { children: ReactNode }) {
     setHospitalArrivedAt(null);
     setSelectedHospital(null);
     setHospitalNavigationStarted(false);
+    setHandoverDurationMinutes(null);
+    incidentStartedAtRef.current = Date.now();
   }, []);
 
   const selectHospital = useCallback((hospital: MockHospital) => {
@@ -116,13 +126,19 @@ export function ActiveIncidentProvider({ children }: { children: ReactNode }) {
     if (!emergency) return false;
     try {
       await api.dropAtHospital(emergency.id, ambulanceId);
-      reset();
+      const startedAt = incidentStartedAtRef.current;
+      setHandoverDurationMinutes(startedAt ? Math.max(1, Math.round((Date.now() - startedAt) / 60000)) : null);
+      setStage('handoverComplete');
       return true;
     } catch (err) {
       Alert.alert('Could not confirm drop-off', err instanceof Error ? err.message : 'Please try again.');
       return false;
     }
   }, [emergency]);
+
+  const completeIncident = useCallback(() => {
+    reset();
+  }, []);
 
   return (
     <ActiveIncidentContext.Provider
@@ -133,6 +149,7 @@ export function ActiveIncidentProvider({ children }: { children: ReactNode }) {
         hospitalArrivedAt,
         selectedHospital,
         hospitalNavigationStarted,
+        handoverDurationMinutes,
         startIncident,
         markArrivedAtScene,
         markArrivedAtHospital,
@@ -140,6 +157,7 @@ export function ActiveIncidentProvider({ children }: { children: ReactNode }) {
         confirmDropoff,
         selectHospital,
         startHospitalNavigation,
+        completeIncident,
       }}
     >
       {children}

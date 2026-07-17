@@ -25,18 +25,29 @@ exports.getEmergencyById = (req, res) => {
 
 exports.createEmergency = (req, res) => {
   try {
-    const { latitude, longitude, priority, description } = req.body;
+    const { latitude, longitude, priority, description, photo_url, video_url, audio_url, report_source } = req.body;
 
     if (latitude === undefined || longitude === undefined || !priority) {
       return res.status(400).json({ error: 'Missing required fields: latitude, longitude, priority' });
     }
+
+    // report_source distinguishes citizen-app reports from admin-panel-created
+    // ones (see backend/supabase/citizen_reports.sql) — defaults to 'admin' so
+    // the existing admin panel, which doesn't send this field, is unaffected.
+    // Citizen reports may optionally carry Cloudinary URLs for attached media;
+    // everything downstream (dispatch engine, driver app) is unchanged either way.
+    const source = report_source === 'citizen' ? 'citizen' : 'admin';
 
     // Create the emergency (initially Pending)
     const newEmergency = db.addEmergency({
       latitude: Number(latitude),
       longitude: Number(longitude),
       priority,
-      description: description || 'Emergency incident reported'
+      description: description || 'Emergency incident reported',
+      photo_url: photo_url || null,
+      video_url: video_url || null,
+      audio_url: audio_url || null,
+      report_source: source
     });
 
     const io = req.app.get('io');
