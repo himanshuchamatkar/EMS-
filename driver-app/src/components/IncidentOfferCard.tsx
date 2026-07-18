@@ -8,6 +8,7 @@ import { useReverseGeocode } from '../hooks/useReverseGeocode';
 import { useAppTheme } from '../hooks/useAppTheme';
 import type { ThemeColors } from '../theme/colors';
 import { calculateDistanceKm, estimateEtaMinutes } from '../utils/distance';
+import IncidentMediaPreview from './IncidentMediaPreview';
 
 interface Props {
   offer: DispatchOffer;
@@ -59,6 +60,8 @@ export default function IncidentOfferCard({ offer, mode, busy, onAccept, onRejec
         <Text style={styles.placeName} numberOfLines={1}>
           {placeName ?? `${emergency.latitude.toFixed(4)}, ${emergency.longitude.toFixed(4)}`}
         </Text>
+
+        <IncidentMediaPreview emergency={emergency} size="large" />
 
         <View style={styles.statsRow}>
           <View style={styles.statBox}>

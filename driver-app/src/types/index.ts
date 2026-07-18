@@ -28,6 +28,13 @@ export interface Emergency {
   picked_up_at?: string | null;
   dropped_at?: string | null;
   created_at: string;
+  // Populated when reported through citizen-app (see backend/supabase/citizen_reports.sql
+  // and backend/controllers/emergencyController.js) — absent/null for admin-created
+  // incidents, which is most of the existing data.
+  photo_url?: string | null;
+  video_url?: string | null;
+  audio_url?: string | null;
+  report_source?: 'admin' | 'citizen';
 }
 
 export interface DispatchOffer {

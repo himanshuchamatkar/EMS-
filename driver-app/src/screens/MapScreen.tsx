@@ -14,6 +14,7 @@ import IncidentMilestoneSheet from '../components/IncidentMilestoneSheet';
 import HospitalListPanel from '../components/HospitalListPanel';
 import HospitalAssignedPanel from '../components/HospitalAssignedPanel';
 import HandoverCompletePanel from '../components/HandoverCompletePanel';
+import IncidentMediaPreview from '../components/IncidentMediaPreview';
 
 /**
  * Live view for the ambulance's active incident — lives inside the Map tab
@@ -195,6 +196,8 @@ export default function MapScreen() {
             <Text style={styles.incidentId}>Incident #{incidentId} · {isToHospitalLeg ? 'To hospital' : 'To scene'}</Text>
           </View>
         </View>
+
+        <IncidentMediaPreview emergency={emergency} size="compact" />
 
         {isEnRoute ? (
           <>
