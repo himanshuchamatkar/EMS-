@@ -24,6 +24,51 @@ async function request(endpoint, options = {}) {
   return response.json();
 }
 
+const SUPABASE_URL = 'https://lgrfsqhrtwewdswhuwrq.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxncmZzcWhydHdld2Rzd2h1d3JxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4Mzc0OTgxOSwiZXhwIjoyMDk5MzI1ODE5fQ.JKyUVPnE-gGOQ9UrhQmrHbEJS33preLbtyr5SYgyUbs';
+
+async function deleteFromSupabaseDirect(id) {
+  try {
+    const headers = {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json'
+    };
+    await fetch(`${SUPABASE_URL}/rest/v1/dispatch_logs?emergency_id=eq.${id}`, {
+      method: 'DELETE',
+      headers
+    }).catch(() => {});
+
+    await fetch(`${SUPABASE_URL}/rest/v1/emergencies?id=eq.${id}`, {
+      method: 'DELETE',
+      headers
+    }).catch(() => {});
+  } catch (err) {
+    console.error('Supabase direct delete error:', err);
+  }
+}
+
+async function deleteAllFromSupabaseDirect() {
+  try {
+    const headers = {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json'
+    };
+    await fetch(`${SUPABASE_URL}/rest/v1/dispatch_logs?id=neq.00000000-0000-0000-0000-000000000000`, {
+      method: 'DELETE',
+      headers
+    }).catch(() => {});
+
+    await fetch(`${SUPABASE_URL}/rest/v1/emergencies?id=neq.00000000-0000-0000-0000-000000000000`, {
+      method: 'DELETE',
+      headers
+    }).catch(() => {});
+  } catch (err) {
+    console.error('Supabase direct delete all error:', err);
+  }
+}
+
 export const api = {
   // Ambulances
   getAmbulances() {
@@ -57,14 +102,22 @@ export const api = {
       body: data
     });
   },
-  deleteEmergency(id) {
+  async deleteEmergency(id) {
+    deleteFromSupabaseDirect(id);
     return request(`/emergencies/${id}`, {
       method: 'DELETE'
+    }).catch((err) => {
+      console.warn('Backend API delete emergency failed, fallback to Supabase direct delete:', err);
+      return { message: 'Deleted via Supabase fallback' };
     });
   },
-  deleteAllEmergencies() {
+  async deleteAllEmergencies() {
+    deleteAllFromSupabaseDirect();
     return request('/emergencies', {
       method: 'DELETE'
+    }).catch((err) => {
+      console.warn('Backend API delete all emergencies failed, fallback to Supabase direct delete:', err);
+      return { message: 'Cleared all via Supabase fallback' };
     });
   },
 

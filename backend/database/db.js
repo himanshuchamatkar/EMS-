@@ -217,6 +217,17 @@ const db = {
     return dbCache.emergencies.find(emp => emp.id === id) || null;
   },
 
+  async syncEmergenciesFromSupabase() {
+    try {
+      const { data, error } = await supabase.from('emergencies').select('*');
+      if (!error && data) {
+        dbCache.emergencies = data;
+      }
+    } catch (err) {
+      console.error('Error syncing emergencies from Supabase:', err);
+    }
+  },
+
   addEmergency(emergency) {
     const newEmergency = {
       id: emergency.id || uuidv4(),
@@ -234,6 +245,7 @@ const db = {
     // Async write to Supabase in the background
     supabase.from('emergencies').insert([persistedEmergency]).then(({ error }) => {
       if (error) console.error('Error adding emergency to Supabase:', error);
+      db.syncEmergenciesFromSupabase();
     });
 
     return newEmergency;
