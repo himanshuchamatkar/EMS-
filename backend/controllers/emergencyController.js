@@ -147,3 +147,20 @@ exports.deleteEmergency = (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+exports.deleteAllEmergencies = (req, res) => {
+  try {
+    db.deleteAllEmergencies();
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('emergencies:list', []);
+      io.emit('ambulances:list', db.getAmbulances());
+      io.emit('emergency:clearedAll');
+    }
+
+    res.json({ message: 'All emergency incident logs deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};

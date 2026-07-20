@@ -5,6 +5,7 @@ const emergencyController = require('../controllers/emergencyController');
 router.get('/', emergencyController.getEmergencies);
 router.get('/:id', emergencyController.getEmergencyById);
 router.post('/', emergencyController.createEmergency);
+router.delete('/', emergencyController.deleteAllEmergencies);
 router.delete('/:id', emergencyController.deleteEmergency);
 
 module.exports = router;

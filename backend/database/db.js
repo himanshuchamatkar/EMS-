@@ -338,6 +338,30 @@ const db = {
     return true;
   },
 
+  deleteAllEmergencies() {
+    dbCache.emergencies = [];
+    dbCache.dispatch_logs = [];
+
+    // Reset all ambulances status to Available
+    dbCache.ambulances = dbCache.ambulances.map(a => ({
+      ...a,
+      status: 'Available',
+      speed: 0,
+      heading: 0
+    }));
+
+    (async () => {
+      try {
+        await supabase.from('dispatch_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        await supabase.from('emergencies').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      } catch (err) {
+        console.error('Error clearing all emergencies from Supabase:', err);
+      }
+    })();
+
+    return true;
+  },
+
   // Dispatch Logs API
   getDispatchLogs() {
     return dbCache.dispatch_logs;
