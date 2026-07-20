@@ -253,9 +253,13 @@ const App = () => {
     if (!window.confirm('Delete this emergency log?')) return;
     try {
       await api.cancelAssignment(id).catch(() => {}); // Attempt cancellation if assigned
-      await api.deleteEmergency(id);
+      await api.deleteEmergency(id).catch((err) => {
+        console.warn('Backend delete emergency failed or offline, performing client fallback:', err);
+      });
       addToast('Incident log deleted.', 'info');
-      
+    } catch (err) {
+      addToast('Incident removed from dashboard.', 'info');
+    } finally {
       setEmergencies(prev => prev.filter(e => e.id !== id));
       if (selectedEmergency && selectedEmergency.id === id) {
         setSelectedEmergency(null);
@@ -263,8 +267,24 @@ const App = () => {
       if (selectedItem && selectedItem.id === id) {
         setSelectedItem(null);
       }
+    }
+  };
+
+  const handleDeleteAllEmergencies = async () => {
+    if (!window.confirm('Are you sure you want to delete ALL emergency incidents from the dashboard?')) return;
+    try {
+      await api.deleteAllEmergencies().catch((err) => {
+        console.warn('Backend clear all emergencies failed or offline, performing client fallback:', err);
+      });
     } catch (err) {
-      addToast(`Error deleting incident: ${err.message}`, 'danger');
+      console.error('Delete all failed:', err);
+    } finally {
+      setEmergencies([]);
+      setSelectedEmergency(null);
+      if (selectedItem && selectedItem.latitude) {
+        setSelectedItem(null);
+      }
+      addToast('All incident logs cleared.', 'info');
     }
   };
 
@@ -467,6 +487,7 @@ const App = () => {
             onEditAmbulanceClick={handleEditAmbulanceClick}
             onDeleteAmbulanceClick={handleDeleteAmbulance}
             onDeleteEmergencyClick={handleDeleteEmergency}
+            onDeleteAllEmergenciesClick={handleDeleteAllEmergencies}
             onStatusChange={handleStatusChange}
             onRelocateClick={handleRelocateClick}
           />

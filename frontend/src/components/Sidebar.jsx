@@ -15,6 +15,7 @@ const Sidebar = ({
   onEditAmbulanceClick,
   onDeleteAmbulanceClick,
   onDeleteEmergencyClick,
+  onDeleteAllEmergenciesClick,
   onStatusChange,
   onRelocateClick,
 }) => {
@@ -220,6 +221,15 @@ const Sidebar = ({
           <>
             <div className="flex justify-between items-center mb-1">
               <span className="text-xs font-bold tracking-wide text-slate-400">EMERGENCY LOGS</span>
+              {emergencies.length > 0 && onDeleteAllEmergenciesClick && (
+                <button
+                  onClick={onDeleteAllEmergenciesClick}
+                  className="text-[10px] font-bold text-red-400 hover:text-red-300 flex items-center gap-1 hover:bg-red-500/10 px-1.5 py-0.5 rounded transition-colors"
+                  title="Clear All Incidents"
+                >
+                  <Trash2 className="w-3 h-3" /> Clear All
+                </button>
+              )}
             </div>
 
             {filteredEmergencies.length === 0 ? (

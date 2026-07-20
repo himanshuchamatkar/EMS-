@@ -62,6 +62,11 @@ export const api = {
       method: 'DELETE'
     });
   },
+  deleteAllEmergencies() {
+    return request('/emergencies', {
+      method: 'DELETE'
+    });
+  },
 
   // Dispatch operations
   findNearest(latitude, longitude) {

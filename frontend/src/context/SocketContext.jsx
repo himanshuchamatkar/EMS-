@@ -92,6 +92,10 @@ export const SocketProvider = ({ children }) => {
       setEmergencies((prev) => prev.filter((emp) => emp.id !== id));
     });
 
+    socketInstance.on('emergency:clearedAll', () => {
+      setEmergencies([]);
+    });
+
     // Simulation states
     socketInstance.on('simulation:state', ({ running }) => {
       setIsSimulating(running);
