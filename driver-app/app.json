@@ -10,7 +10,7 @@
       "apiBaseUrl": "https://smart-ambulance-api-5ui6.onrender.com/api",
       "socketUrl": "https://smart-ambulance-api-5ui6.onrender.com",
       "eas": {
-        "projectId": "d690adbd-872f-474b-82e4-94608afb97cd"
+        "projectId": "102b83e4-5031-44f8-9139-acaab09121bf"
       }
     },
     "ios": {
@@ -45,6 +45,7 @@
           "locationWhenInUsePermission": "Smart EMS needs your location to share this ambulance's live position with dispatch while you're online."
         }
       ]
-    ]
+    ],
+    "owner": "himanshuchamatkar123"
   }
 }

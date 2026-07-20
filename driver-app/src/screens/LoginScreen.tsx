@@ -81,7 +81,7 @@ export default function LoginScreen({ navigation }: Props) {
     }
   };
 
-  const handleRegisterSubmit = () => {
+  const handleRegisterSubmit = async () => {
     const aadhaarTrimmed = aadhaar.trim();
     const mobileTrimmed = mobile.trim();
     const licenseTrimmed = license.trim();
@@ -104,12 +104,30 @@ export default function LoginScreen({ navigation }: Props) {
       return;
     }
 
+    setLoading(true);
     setError(null);
-    Alert.alert(
-      'Registration submitted',
-      'Your request has been sent to dispatch for verification. You’ll be notified once access is approved.',
-      [{ text: 'OK', onPress: () => switchMode('login') }]
-    );
+    try {
+      await api.createAmbulance({
+        name: `Ambulance ${plateTrimmed}`,
+        vehicle_number: plateTrimmed,
+        driver_name: `Driver (Lic: ${licenseTrimmed})`,
+        latitude: 28.6139,
+        longitude: 77.2090,
+      });
+
+      Alert.alert(
+        'Registration Approved',
+        'Your registration was successful and approved. You can now log in using your plate number.',
+        [{ text: 'OK', onPress: () => {
+          setPlate(plateTrimmed);
+          switchMode('login');
+        }}]
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not register the ambulance.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -226,11 +244,15 @@ export default function LoginScreen({ navigation }: Props) {
 
               {error ? <Text style={styles.error}>{error}</Text> : null}
 
-              <TouchableOpacity style={styles.secondaryButton} onPress={handleRegisterSubmit}>
-                <View style={styles.buttonContent}>
-                  <MaterialCommunityIcons name="account-plus-outline" size={17} color={theme.secondaryInk} />
-                  <Text style={styles.secondaryButtonText}>SUBMIT REGISTRATION</Text>
-                </View>
+              <TouchableOpacity style={styles.secondaryButton} onPress={handleRegisterSubmit} disabled={loading}>
+                {loading ? (
+                  <ActivityIndicator color={theme.secondaryInk} />
+                ) : (
+                  <View style={styles.buttonContent}>
+                    <MaterialCommunityIcons name="account-plus-outline" size={17} color={theme.secondaryInk} />
+                    <Text style={styles.secondaryButtonText}>SUBMIT REGISTRATION</Text>
+                  </View>
+                )}
               </TouchableOpacity>
             </>
           )}

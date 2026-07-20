@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Plus, Trash2, Edit3, MapPin, CheckCircle2, ShieldAlert, Radio } from 'lucide-react';
+import { Search, Plus, Trash2, Edit3, MapPin, CheckCircle2, ShieldAlert, Radio, Image, Video, Mic } from 'lucide-react';
 
 // Ambulances can be managed two ways: manually here (for vehicles with no
 // driver phone) or live from the driver app (see driver-app/). Both write to
@@ -253,6 +253,27 @@ const Sidebar = ({
                     <p className="text-xs text-slate-300 line-clamp-2 mb-2 font-medium">
                       {emp.description}
                     </p>
+
+                    {/* Media indicator badges */}
+                    {(emp.photo_url || emp.video_url || emp.audio_url) && (
+                      <div className="flex gap-1.5 mb-2 flex-wrap">
+                        {emp.photo_url && (
+                          <span className="inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 bg-brand-blue/15 text-brand-blue border border-brand-blue/30 rounded uppercase">
+                            <Image className="w-2.5 h-2.5" /> Photo
+                          </span>
+                        )}
+                        {emp.video_url && (
+                          <span className="inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 bg-purple-500/15 text-purple-300 border border-purple-500/30 rounded uppercase">
+                            <Video className="w-2.5 h-2.5" /> Video
+                          </span>
+                        )}
+                        {emp.audio_url && (
+                          <span className="inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 bg-teal-500/15 text-teal-300 border border-teal-500/30 rounded uppercase">
+                            <Mic className="w-2.5 h-2.5" /> Audio
+                          </span>
+                        )}
+                      </div>
+                    )}
 
                     <div className="flex justify-between items-center text-[10px] text-slate-400 mt-2 border-t border-dark-border/40 pt-2">
                       <div className="flex items-center gap-1 font-semibold text-slate-500">

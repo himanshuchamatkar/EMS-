@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldAlert, MapPin, Navigation, Clock, Ban, UserCheck, History, X, Compass } from 'lucide-react';
+import { ShieldAlert, MapPin, Navigation, Clock, Ban, UserCheck, History, X, Compass, Image, Video, Mic } from 'lucide-react';
 import { api } from '../services/api';
 
 const DispatchPanel = ({
@@ -189,16 +189,56 @@ const DispatchPanel = ({
         
         {/* Detail Panel */}
         <div className="flex-1 space-y-2">
-          <div className="flex items-center gap-2">
-            <span className="p-1.5 bg-brand-blue/15 text-brand-blue rounded-lg">
-              <ShieldAlert className="w-5 h-5" />
-            </span>
-            <div>
+          <div className="flex items-start gap-3">
+            {selectedEmergency.photo_url && (
+              <a href={selectedEmergency.photo_url} target="_blank" rel="noopener noreferrer" className="shrink-0 mt-1">
+                <img
+                  src={selectedEmergency.photo_url}
+                  alt="Incident Attachment"
+                  className="w-12 h-12 object-cover rounded-lg border border-dark-border hover:border-brand-blue transition-all"
+                />
+              </a>
+            )}
+            <div className="flex-grow">
               <div className="flex items-center gap-2">
-                <h4 className="text-sm font-extrabold text-slate-200 uppercase tracking-wide">Incident Active Dispatch</h4>
-                <span className="text-[10px] text-slate-500 font-mono">ID: {selectedEmergency.id.slice(0, 8)}...</span>
+                <span className="p-1.5 bg-brand-blue/15 text-brand-blue rounded-lg">
+                  <ShieldAlert className="w-5 h-5" />
+                </span>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-sm font-extrabold text-slate-200 uppercase tracking-wide">Incident Active Dispatch</h4>
+                    <span className="text-[10px] text-slate-500 font-mono">ID: {selectedEmergency.id.slice(0, 8)}...</span>
+                  </div>
+                  <p className="text-xs text-slate-400 line-clamp-1 italic">"{selectedEmergency.description}"</p>
+                </div>
               </div>
-              <p className="text-xs text-slate-400 line-clamp-1 italic">"{selectedEmergency.description}"</p>
+
+              {/* Media attachments */}
+              {(selectedEmergency.video_url || selectedEmergency.audio_url) && (
+                <div className="flex items-center gap-2 mt-2 ml-10">
+                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Citizen Media:</span>
+                  {selectedEmergency.video_url && (
+                    <a
+                      href={selectedEmergency.video_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-[10px] bg-purple-500/20 hover:bg-purple-500/35 text-purple-300 px-2 py-0.5 rounded border border-purple-500/30 transition-all font-semibold"
+                    >
+                      <Video className="w-3.5 h-3.5" /> Video
+                    </a>
+                  )}
+                  {selectedEmergency.audio_url && (
+                    <a
+                      href={selectedEmergency.audio_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-[10px] bg-teal-500/20 hover:bg-teal-500/35 text-teal-300 px-2 py-0.5 rounded border border-teal-500/30 transition-all font-semibold"
+                    >
+                      <Mic className="w-3.5 h-3.5" /> Audio
+                    </a>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
