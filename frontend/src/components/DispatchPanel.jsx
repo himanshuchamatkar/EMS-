@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldAlert, MapPin, Navigation, Clock, Ban, UserCheck, History, X, Compass, Image, Video, Mic } from 'lucide-react';
+import { ShieldAlert, MapPin, Navigation, Clock, Ban, UserCheck, History, X, Compass, Image, Video, Mic, Trash2 } from 'lucide-react';
 import { api } from '../services/api';
 
 const DispatchPanel = ({
@@ -7,6 +7,7 @@ const DispatchPanel = ({
   ambulances,
   onReassign,
   onCancel,
+  onDeleteEmergency,
   onClose,
   historyTrigger
 }) => {
@@ -35,6 +36,16 @@ const DispatchPanel = ({
     }
   };
 
+  const handleDeleteLog = async (logId) => {
+    if (!window.confirm('Delete this dispatch history log record?')) return;
+    try {
+      await api.deleteDispatchLog(logId);
+      setLogs(prev => prev.filter(l => l.id !== logId));
+    } catch (err) {
+      alert(`Failed to delete history log: ${err.message}`);
+    }
+  };
+
   useEffect(() => {
     if (historyOpen || historyTrigger) {
       fetchLogs();
@@ -51,47 +62,6 @@ const DispatchPanel = ({
 
   // Find currently assigned ambulance if any
   const assignedAmbulance = ambulances.find(a => a.id === selectedEmergency.assigned_ambulance);
-
-  // Distance calculation
-  // We can calculate straight line distance or get it if it was precomputed. 
-  // Let's compute it live on the client side using Haversine if needed, or estimate it.
-  const calculateLiveDistance = () => {
-    if (!assignedAmbulance) return null;
-    
-    // Client-side simple Haversine formula
-    const lat1 = selectedEmergency.latitude;
-    const lon1 = selectedEmergency.longitude;
-    const lat2 = assignedAmbulance.latitude;
-    const lon2 = assignedAmbulance.longitude;
-
-    const R = 6371; // km
-    const dLat = ((lat2 - lat1) * Math.PI) / 180;
-    const dLon = ((lon2 - lon1) * Math.PI) / 180;
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos((lat1 * Math.PI) / 180) *
-        Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    const dist = R * c;
-    return dist;
-  };
-
-  const distance = calculateLiveDistance();
-  
-  // Calculate ETA (Estimate: 1.5 minutes per km if speed is low, or dist / speed * 60)
-  const calculateETA = () => {
-    if (!distance) return 'N/A';
-    if (distance < 0.1) return 'Arrived';
-    
-    const speed = assignedAmbulance.speed || 40;
-    const timeHours = distance / speed;
-    const timeMinutes = Math.round(timeHours * 60);
-    
-    if (timeMinutes <= 1) return 'Less than a minute';
-    return `${timeMinutes} mins`;
-  };
 
   const handleManualReassign = (e) => {
     e.preventDefault();
@@ -133,6 +103,7 @@ const DispatchPanel = ({
                     <th className="p-3">Assigned Time</th>
                     <th className="p-3">Response Time</th>
                     <th className="p-3">Status</th>
+                    <th className="p-3 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-dark-border/40">
@@ -172,6 +143,15 @@ const DispatchPanel = ({
                           {log.status}
                         </span>
                       </td>
+                      <td className="p-3 text-right">
+                        <button
+                          onClick={() => handleDeleteLog(log.id)}
+                          title="Delete History Log"
+                          className="p-1 rounded hover:bg-dark-hover text-slate-400 hover:text-brand-red transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -199,74 +179,98 @@ const DispatchPanel = ({
                 />
               </a>
             )}
-            <div className="flex-grow">
-              <div className="flex items-center gap-2">
-                <span className="p-1.5 bg-brand-blue/15 text-brand-blue rounded-lg">
-                  <ShieldAlert className="w-5 h-5" />
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase ${
+                  selectedEmergency.priority === 'Critical' ? 'bg-red-500/20 text-red-400 border-red-500/40' :
+                  selectedEmergency.priority === 'High' ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' :
+                  selectedEmergency.priority === 'Medium' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/40' :
+                  'bg-blue-500/20 text-blue-400 border-blue-500/40'
+                }`}>
+                  {selectedEmergency.priority} Priority
                 </span>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h4 className="text-sm font-extrabold text-slate-200 uppercase tracking-wide">Incident Active Dispatch</h4>
-                    <span className="text-[10px] text-slate-500 font-mono">ID: {selectedEmergency.id.slice(0, 8)}...</span>
-                  </div>
-                  <p className="text-xs text-slate-400 line-clamp-1 italic">"{selectedEmergency.description}"</p>
-                </div>
+
+                <span className="text-xs text-slate-400 font-mono">
+                  ID: {selectedEmergency.id.slice(0, 8)}
+                </span>
+                
+                {selectedEmergency.report_source === 'citizen' && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded border bg-purple-500/20 text-purple-300 border-purple-500/40 uppercase">
+                    📱 Citizen Report
+                  </span>
+                )}
               </div>
 
-              {/* Media attachments */}
-              {(selectedEmergency.video_url || selectedEmergency.audio_url) && (
-                <div className="flex items-center gap-2 mt-2 ml-10">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Citizen Media:</span>
-                  {selectedEmergency.video_url && (
-                    <a
-                      href={selectedEmergency.video_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-[10px] bg-purple-500/20 hover:bg-purple-500/35 text-purple-300 px-2 py-0.5 rounded border border-purple-500/30 transition-all font-semibold"
-                    >
-                      <Video className="w-3.5 h-3.5" /> Video
-                    </a>
-                  )}
-                  {selectedEmergency.audio_url && (
-                    <a
-                      href={selectedEmergency.audio_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-[10px] bg-teal-500/20 hover:bg-teal-500/35 text-teal-300 px-2 py-0.5 rounded border border-teal-500/30 transition-all font-semibold"
-                    >
-                      <Mic className="w-3.5 h-3.5" /> Audio
-                    </a>
-                  )}
-                </div>
+              <h4 className="text-sm font-semibold text-slate-100 mt-1">
+                {selectedEmergency.description}
+              </h4>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4 text-xs text-slate-400 flex-wrap">
+            <div className="flex items-center gap-1">
+              <MapPin className="w-3.5 h-3.5 text-brand-red" />
+              <span>{selectedEmergency.latitude.toFixed(4)}, {selectedEmergency.longitude.toFixed(4)}</span>
+            </div>
+            
+            <div className="flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5 text-slate-400" />
+              <span>Reported: {new Date(selectedEmergency.created_at || Date.now()).toLocaleTimeString()}</span>
+            </div>
+
+            {assignedAmbulance ? (
+              <div className="flex items-center gap-1 text-emerald-400 font-medium">
+                <Navigation className="w-3.5 h-3.5" />
+                <span>Assigned: {assignedAmbulance.name} ({assignedAmbulance.vehicle_number})</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1 text-amber-400 font-medium">
+                <ShieldAlert className="w-3.5 h-3.5" />
+                <span>Unassigned (Searching...)</span>
+              </div>
+            )}
+          </div>
+
+          {/* Media Attachments Section */}
+          {(selectedEmergency.photo_url || selectedEmergency.video_url || selectedEmergency.audio_url) && (
+            <div className="flex items-center gap-3 pt-1 border-t border-dark-border/40 text-xs">
+              <span className="text-[11px] font-medium text-slate-400">Media:</span>
+              {selectedEmergency.photo_url && (
+                <a
+                  href={selectedEmergency.photo_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-[11px] text-brand-blue hover:underline font-medium"
+                >
+                  <Image className="w-3 h-3" /> View Photo
+                </a>
+              )}
+              {selectedEmergency.video_url && (
+                <a
+                  href={selectedEmergency.video_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-[11px] text-purple-400 hover:underline font-medium"
+                >
+                  <Video className="w-3 h-3" /> Play Video
+                </a>
+              )}
+              {selectedEmergency.audio_url && (
+                <a
+                  href={selectedEmergency.audio_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-[11px] text-teal-400 hover:underline font-medium"
+                >
+                  <Mic className="w-3 h-3" /> Listen Audio
+                </a>
               )}
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-1">
-            <div className="flex items-center gap-1.5 text-xs text-slate-300">
-              <Navigation className="w-3.5 h-3.5 text-brand-green" />
-              <span>Assigned: <strong className="text-slate-100 font-semibold">{assignedAmbulance ? assignedAmbulance.name : 'None'}</strong></span>
-            </div>
-
-            <div className="flex items-center gap-1.5 text-xs text-slate-300">
-              <Compass className="w-3.5 h-3.5 text-brand-orange animate-spin" style={{ animationDuration: '6s' }} />
-              <span>Distance: <strong className="text-slate-100 font-semibold">{distance ? `${distance.toFixed(2)} km` : 'N/A'}</strong></span>
-            </div>
-
-            <div className="flex items-center gap-1.5 text-xs text-slate-300">
-              <Clock className="w-3.5 h-3.5 text-brand-blue" />
-              <span>ETA: <strong className="text-slate-100 font-semibold">{calculateETA()}</strong></span>
-            </div>
-
-            <div className="flex items-center gap-1.5 text-xs text-slate-300">
-              <MapPin className="w-3.5 h-3.5 text-brand-red" />
-              <span>Status: <strong className={`font-semibold ${selectedEmergency.status === 'Assigned' ? 'text-brand-green' : 'text-brand-blue'}`}>{selectedEmergency.status}</strong></span>
-            </div>
-          </div>
+          )}
         </div>
 
-        {/* Action Controls & Manual Override */}
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto border-t md:border-t-0 border-dark-border/40 pt-3 md:pt-0">
+        {/* Action Buttons */}
+        <div className="flex items-center gap-2 self-end md:self-center shrink-0">
           
           {/* History Logger */}
           <button
@@ -303,12 +307,22 @@ const DispatchPanel = ({
               {assignedAmbulance && (
                 <button
                   onClick={() => onCancel(selectedEmergency.id)}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-red-600/20 border border-red-500/30 hover:bg-red-600 text-brand-red hover:text-slate-100 text-xs font-bold rounded-lg transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-2 bg-amber-600/20 border border-amber-500/30 hover:bg-amber-600 text-amber-400 hover:text-slate-100 text-xs font-bold rounded-lg transition-colors"
                 >
-                  <Ban className="w-4 h-4" /> Cancel
+                  <Ban className="w-4 h-4" /> Cancel Assignment
                 </button>
               )}
             </>
+          )}
+
+          {onDeleteEmergency && (
+            <button
+              onClick={() => onDeleteEmergency(selectedEmergency.id)}
+              className="flex items-center gap-1.5 px-3 py-2 bg-red-600/20 border border-red-500/30 hover:bg-red-600 text-brand-red hover:text-slate-100 text-xs font-bold rounded-lg transition-colors"
+              title="Delete Incident"
+            >
+              <Trash2 className="w-4 h-4" /> Delete
+            </button>
           )}
 
           <button

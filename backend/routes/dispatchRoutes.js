@@ -10,5 +10,6 @@ router.post('/reject', dispatchController.rejectOffer);
 router.post('/pickup', dispatchController.pickupVictim);
 router.post('/drop', dispatchController.dropAtHospital);
 router.get('/history', dispatchController.getHistory);
+router.delete('/logs/:id', dispatchController.deleteDispatchLog);
 
 module.exports = router;

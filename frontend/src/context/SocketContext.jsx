@@ -88,6 +88,10 @@ export const SocketProvider = ({ children }) => {
       );
     });
 
+    socketInstance.on('emergency:deleted', ({ id }) => {
+      setEmergencies((prev) => prev.filter((emp) => emp.id !== id));
+    });
+
     // Simulation states
     socketInstance.on('simulation:state', ({ running }) => {
       setIsSimulating(running);

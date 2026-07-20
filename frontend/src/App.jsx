@@ -12,6 +12,7 @@ const App = () => {
   const {
     ambulances,
     emergencies,
+    setEmergencies,
     isSimulating,
     connected,
     mode
@@ -255,6 +256,7 @@ const App = () => {
       await api.deleteEmergency(id);
       addToast('Incident log deleted.', 'info');
       
+      setEmergencies(prev => prev.filter(e => e.id !== id));
       if (selectedEmergency && selectedEmergency.id === id) {
         setSelectedEmergency(null);
       }
@@ -495,6 +497,7 @@ const App = () => {
             ambulances={ambulances}
             onReassign={handleReassignAmbulance}
             onCancel={handleCancelAssignment}
+            onDeleteEmergency={handleDeleteEmergency}
             onClose={() => setSelectedEmergency(null)}
             historyTrigger={forceFetchLogs}
           />

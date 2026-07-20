@@ -310,6 +310,9 @@ const db = {
     const emp = dbCache.emergencies[index];
     dbCache.emergencies.splice(index, 1);
 
+    // Remove associated dispatch logs from cache as well
+    dbCache.dispatch_logs = dbCache.dispatch_logs.filter(log => log.emergency_id !== id);
+
     // Reset assigned ambulance status in cache
     if (emp.assigned_ambulance) {
       const ambIndex = dbCache.ambulances.findIndex(a => a.id === emp.assigned_ambulance);
@@ -319,10 +322,18 @@ const db = {
       }
     }
 
-    // Async delete on Supabase in the background
-    supabase.from('emergencies').delete().eq('id', id).then(({ error }) => {
-      if (error) console.error(`Error deleting emergency ${id} from Supabase:`, error);
-    });
+    // Async delete on Supabase in proper order (dispatch_logs first to satisfy FK constraint, then emergencies)
+    (async () => {
+      try {
+        const { error: logError } = await supabase.from('dispatch_logs').delete().eq('emergency_id', id);
+        if (logError) console.error(`Error deleting dispatch logs for emergency ${id} from Supabase:`, logError);
+
+        const { error: empError } = await supabase.from('emergencies').delete().eq('id', id);
+        if (empError) console.error(`Error deleting emergency ${id} from Supabase:`, empError);
+      } catch (err) {
+        console.error(`Error deleting emergency ${id} from Supabase:`, err);
+      }
+    })();
 
     return true;
   },
@@ -330,6 +341,19 @@ const db = {
   // Dispatch Logs API
   getDispatchLogs() {
     return dbCache.dispatch_logs;
+  },
+
+  deleteDispatchLog(id) {
+    const index = dbCache.dispatch_logs.findIndex(log => log.id === id);
+    if (index === -1) return false;
+
+    dbCache.dispatch_logs.splice(index, 1);
+
+    supabase.from('dispatch_logs').delete().eq('id', id).then(({ error }) => {
+      if (error) console.error(`Error deleting dispatch log ${id} from Supabase:`, error);
+    });
+
+    return true;
   },
 
   addDispatchLog(log) {

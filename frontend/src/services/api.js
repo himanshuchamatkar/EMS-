@@ -85,6 +85,11 @@ export const api = {
   getDispatchHistory() {
     return request('/dispatch/history');
   },
+  deleteDispatchLog(id) {
+    return request(`/dispatch/logs/${id}`, {
+      method: 'DELETE'
+    });
+  },
 
   // Simulation operations
   startSimulation() {

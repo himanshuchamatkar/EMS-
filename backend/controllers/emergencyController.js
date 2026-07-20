@@ -137,6 +137,7 @@ exports.deleteEmergency = (req, res) => {
 
     const io = req.app.get('io');
     if (io) {
+      io.emit('emergency:deleted', { id });
       io.emit('emergencies:list', db.getEmergencies());
       io.emit('ambulances:list', db.getAmbulances());
     }

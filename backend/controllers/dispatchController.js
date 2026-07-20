@@ -449,3 +449,17 @@ exports.getHistory = (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+exports.deleteDispatchLog = (req, res) => {
+  try {
+    const { id } = req.params;
+    const success = db.deleteDispatchLog(id);
+    if (!success) {
+      return res.status(404).json({ error: 'Dispatch log not found' });
+    }
+
+    res.json({ message: 'Dispatch log deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
