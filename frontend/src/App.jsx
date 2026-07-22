@@ -118,6 +118,10 @@ const App = () => {
     setSelectedEmergency(emp);
   };
 
+  const handleSelectHospital = (hosp) => {
+    setSelectedItem(hosp);
+  };
+
   // Map clicks handler based on mapClickMode
   const handleMapClick = async (lat, lng) => {
     if (!mapClickMode) return;
@@ -480,10 +484,13 @@ const App = () => {
           <Sidebar
             ambulances={ambulances}
             emergencies={emergencies}
+            hospitals={hospitals}
             onSelectAmbulance={handleSelectAmbulance}
             onSelectEmergency={handleSelectEmergency}
+            onSelectHospital={handleSelectHospital}
             selectedAmbulanceId={selectedItem?.vehicle_number ? selectedItem.id : null}
             selectedEmergencyId={selectedEmergency?.id}
+            selectedHospitalId={selectedItem?.hospital_id ? selectedItem.hospital_id : null}
             onAddAmbulanceClick={triggerAddAmbulanceMode}
             onEditAmbulanceClick={handleEditAmbulanceClick}
             onDeleteAmbulanceClick={handleDeleteAmbulance}

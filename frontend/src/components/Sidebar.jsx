@@ -7,10 +7,13 @@ import { Search, Plus, Trash2, Edit3, MapPin, CheckCircle2, ShieldAlert, Radio, 
 const Sidebar = ({
   ambulances,
   emergencies,
+  hospitals = [],
   onSelectAmbulance,
   onSelectEmergency,
+  onSelectHospital,
   selectedAmbulanceId,
   selectedEmergencyId,
+  selectedHospitalId,
   onAddAmbulanceClick,
   onEditAmbulanceClick,
   onDeleteAmbulanceClick,
@@ -41,6 +44,16 @@ const Sidebar = ({
       (emp.description && emp.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
       emp.priority.toLowerCase().includes(searchQuery.toLowerCase()) ||
       emp.status.toLowerCase().includes(searchQuery.toLowerCase());
+
+    return matchesSearch;
+  });
+
+  // Filter and search hospitals
+  const filteredHospitals = hospitals.filter(h => {
+    const matchesSearch =
+      h.hospital_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      h.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (h.hospital_type && h.hospital_type.toLowerCase().includes(searchQuery.toLowerCase()));
 
     return matchesSearch;
   });
@@ -83,7 +96,11 @@ const Sidebar = ({
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder={activeTab === 'ambulances' ? "Search ambulance, driver..." : "Search description, priority..."}
+            placeholder={
+              activeTab === 'ambulances' ? "Search ambulance, driver..." :
+              activeTab === 'emergencies' ? "Search description, priority..." :
+              "Search hospital name, address..."
+            }
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-slate-900/60 border border-dark-border rounded-lg pl-9 pr-4 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-brand-blue transition-colors"
@@ -91,26 +108,36 @@ const Sidebar = ({
         </div>
 
         {/* Tab Headers */}
-        <div className="flex bg-slate-900/80 p-1 rounded-lg border border-dark-border/60">
+        <div className="flex bg-slate-900/80 p-1 rounded-lg border border-dark-border/60 gap-0.5">
           <button
             onClick={() => { setActiveTab('ambulances'); setSearchQuery(''); }}
-            className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${
+            className={`flex-1 py-1.5 text-[10px] font-bold rounded-md transition-all ${
               activeTab === 'ambulances'
                 ? 'bg-dark-card text-brand-blue shadow-md'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            Ambulances ({ambulances.length})
+            Ambs ({ambulances.length})
           </button>
           <button
             onClick={() => { setActiveTab('emergencies'); setSearchQuery(''); }}
-            className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${
+            className={`flex-1 py-1.5 text-[10px] font-bold rounded-md transition-all ${
               activeTab === 'emergencies'
                 ? 'bg-dark-card text-brand-blue shadow-md'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             Incidents ({emergencies.filter(e => e.status !== 'Resolved').length})
+          </button>
+          <button
+            onClick={() => { setActiveTab('hospitals'); setSearchQuery(''); }}
+            className={`flex-1 py-1.5 text-[10px] font-bold rounded-md transition-all ${
+              activeTab === 'hospitals'
+                ? 'bg-dark-card text-brand-blue shadow-md'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            Hospitals ({hospitals.length})
           </button>
         </div>
       </div>
@@ -217,7 +244,7 @@ const Sidebar = ({
               })
             )}
           </>
-        ) : (
+        ) : activeTab === 'emergencies' ? (
           <>
             <div className="flex justify-between items-center mb-1">
               <span className="text-xs font-bold tracking-wide text-slate-400">EMERGENCY LOGS</span>
@@ -227,7 +254,7 @@ const Sidebar = ({
                   className="text-[10px] font-bold text-red-400 hover:text-red-300 flex items-center gap-1 hover:bg-red-500/10 px-1.5 py-0.5 rounded transition-colors"
                   title="Clear All Incidents"
                 >
-                  <Trash2 className="w-3 h-3" /> Clear All
+                  <Trash2 className="w-3.5 h-3.5" /> Clear All
                 </button>
               )}
             </div>
@@ -316,6 +343,60 @@ const Sidebar = ({
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </>
+        ) : (
+          <>
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-xs font-bold tracking-wide text-slate-400">REGISTERED HOSPITALS</span>
+            </div>
+
+            {filteredHospitals.length === 0 ? (
+              <div className="text-center py-8 text-slate-500 text-xs italic">
+                No hospitals registered.
+              </div>
+            ) : (
+              filteredHospitals.map((h) => {
+                const isSelected = selectedHospitalId === h.hospital_id;
+                return (
+                  <div
+                    key={h.hospital_id}
+                    onClick={() => onSelectHospital(h)}
+                    className={`p-3 rounded-lg border text-left cursor-pointer transition-all ${
+                      isSelected
+                        ? 'bg-slate-800/80 border-brand-blue shadow-lg shadow-blue-500/5'
+                        : 'bg-slate-900/40 border-dark-border hover:bg-slate-800/30'
+                    }`}
+                  >
+                    <div className="flex justify-between items-start mb-1.5 gap-2">
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-sm font-bold text-slate-200 truncate">{h.hospital_name}</span>
+                        <span className="text-[10px] text-slate-400 truncate">{h.address}</span>
+                      </div>
+                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase shrink-0 ${
+                        h.emergency_status === 'OPEN'
+                          ? 'bg-brand-green/20 text-brand-green border-brand-green/30'
+                          : 'bg-brand-red/20 text-brand-red border-brand-red/30'
+                      }`}>
+                        {h.emergency_status}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center text-xs text-slate-400 mt-2 border-t border-dark-border/40 pt-2">
+                      <span>Beds: <strong className="text-slate-300">{h.facilities?.emergency_beds || 0} Available</strong></span>
+                      <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => onSelectHospital(h)}
+                          title="Locate on Map"
+                          className="p-1 rounded hover:bg-dark-hover text-brand-blue hover:text-blue-400 transition-colors"
+                        >
+                          <MapPin className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
