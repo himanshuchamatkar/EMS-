@@ -267,6 +267,138 @@ const DispatchPanel = ({
               )}
             </div>
           )}
+
+          {/* Incident Lifecycle Progress Timeline */}
+          <div className="mt-3 pt-3 border-t border-dark-border/30 flex items-center justify-between gap-4 overflow-x-auto text-[11px] md:text-xs select-none">
+            {/* Step 1: Reported */}
+            <div className="flex items-center gap-2 shrink-0">
+              <div className="w-5 h-5 rounded-full bg-emerald-500/20 border border-emerald-500/60 flex items-center justify-center text-emerald-400 font-bold">
+                ✓
+              </div>
+              <div className="flex flex-col">
+                <span className="font-bold text-slate-200">Incident Reported</span>
+                <span className="text-[10px] text-slate-500">
+                  {selectedEmergency.created_at ? new Date(selectedEmergency.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Reported'}
+                </span>
+              </div>
+            </div>
+
+            <div className="h-px bg-dark-border flex-1 min-w-[15px]" />
+
+            {/* Step 2: Ambulance Assigned */}
+            <div className="flex items-center gap-2 shrink-0">
+              {assignedAmbulance ? (
+                <>
+                  <div className="w-5 h-5 rounded-full bg-emerald-500/20 border border-emerald-500/60 flex items-center justify-center text-emerald-400 font-bold">
+                    ✓
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="font-bold text-slate-200">Ambulance Dispatched</span>
+                    <span className="text-[10px] text-brand-blue font-semibold" title={assignedAmbulance.vehicle_number}>
+                      {assignedAmbulance.name}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="w-5 h-5 rounded-full bg-slate-900 border border-dark-border flex items-center justify-center text-slate-500 font-bold">
+                    2
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-slate-500">Ambulance Dispatch</span>
+                    <span className="text-[10px] text-amber-500 animate-pulse font-medium">Searching...</span>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="h-px bg-dark-border flex-1 min-w-[15px]" />
+
+            {/* Step 3: Hospital Allotted */}
+            <div className="flex items-center gap-2 shrink-0">
+              {selectedEmergency.assigned_hospital ? (
+                <>
+                  <div className="w-5 h-5 rounded-full bg-emerald-500/20 border border-emerald-500/60 flex items-center justify-center text-emerald-400 font-bold">
+                    ✓
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="font-bold text-slate-200">Hospital Confirmed</span>
+                    <span className="text-[10px] text-brand-green font-semibold" title={selectedEmergency.assigned_hospital.address}>
+                      {selectedEmergency.assigned_hospital.hospital_name}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="w-5 h-5 rounded-full bg-slate-900 border border-dark-border flex items-center justify-center text-slate-500 font-bold">
+                    3
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-slate-500">Hospital Allotment</span>
+                    <span className="text-[10px] text-slate-600 font-medium">Waiting...</span>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="h-px bg-dark-border flex-1 min-w-[15px]" />
+
+            {/* Step 4: Patient Picked Up */}
+            <div className="flex items-center gap-2 shrink-0">
+              {selectedEmergency.picked_up_at || selectedEmergency.status === 'VICTIM_PICKED' || selectedEmergency.status === 'Resolved' ? (
+                <>
+                  <div className="w-5 h-5 rounded-full bg-emerald-500/20 border border-emerald-500/60 flex items-center justify-center text-emerald-400 font-bold">
+                    ✓
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="font-bold text-slate-200">Patient Picked Up</span>
+                    <span className="text-[10px] text-slate-400 font-medium">
+                      {selectedEmergency.picked_up_at ? new Date(selectedEmergency.picked_up_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Picked up'}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="w-5 h-5 rounded-full bg-slate-900 border border-dark-border flex items-center justify-center text-slate-500 font-bold">
+                    4
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-slate-500">Patient Pick Up</span>
+                    <span className="text-[10px] text-slate-600 font-medium">En Route...</span>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="h-px bg-dark-border flex-1 min-w-[15px]" />
+
+            {/* Step 5: Dropped Off (Resolved) */}
+            <div className="flex items-center gap-2 shrink-0">
+              {selectedEmergency.dropped_at || selectedEmergency.status === 'Resolved' ? (
+                <>
+                  <div className="w-5 h-5 rounded-full bg-emerald-500/20 border border-emerald-500/60 flex items-center justify-center text-emerald-400 font-bold">
+                    ✓
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="font-bold text-slate-200">Delivered</span>
+                    <span className="text-[10px] text-emerald-400 font-bold">
+                      {selectedEmergency.dropped_at ? new Date(selectedEmergency.dropped_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Resolved'}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="w-5 h-5 rounded-full bg-slate-900 border border-dark-border flex items-center justify-center text-slate-500 font-bold">
+                    5
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-slate-500">Hospital Delivery</span>
+                    <span className="text-[10px] text-slate-600 font-medium">Transporting...</span>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Action Buttons */}
