@@ -789,3 +789,76 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--color-orange);
   border: 1px solid rgba(245, 158, 11, 0.2);
 }
+
+/* Incoming alert Sidebar styling */
+.alert-sidebar {
+  width: 420px;
+  background: var(--bg-secondary);
+  border-left: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow-y: auto;
+  box-shadow: -4px 0 25px rgba(0, 0, 0, 0.4);
+  animation: slide-in-right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 100;
+}
+
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.alert-sidebar .alert-modal-header {
+  border-radius: 0;
+  background: linear-gradient(to right, #7f1d1d, #ef4444);
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: white;
+}
+
+.alert-sidebar .alert-modal-header h3 {
+  font-size: 1.2rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.alert-sidebar .alert-modal-body {
+  padding: 1.5rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.alert-sidebar .emergency-detail-box {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.alert-sidebar .emergency-media-preview {
+  margin-top: 0.5rem;
+}
+
+.alert-sidebar .alert-actions {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.alert-sidebar .btn-accept,
+.alert-sidebar .btn-reject {
+  width: 100%;
+  padding: 0.85rem;
+  font-size: 0.95rem;
+}
