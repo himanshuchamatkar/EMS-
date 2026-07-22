@@ -204,6 +204,15 @@ export default function MapScreen() {
         </View>
       )}
 
+      {emergency && emergency.assigned_hospital_id && !isPickedUp && (
+        <View style={{ backgroundColor: '#D1FAE5', borderBottomWidth: 1, borderBottomColor: '#A7F3D0', paddingVertical: 10, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <MaterialCommunityIcons name="hospital-building" size={16} color="#059669" />
+          <Text style={{ color: '#065F46', fontSize: 11.5, fontWeight: '700', flex: 1 }}>
+            Hospital Allotted: {selectedHospital?.name || 'Assigned Hospital'}. Proceed to pick up patient.
+          </Text>
+        </View>
+      )}
+
       <WebView
         ref={webViewRef}
         source={{ html: LEAFLET_MAP_HTML }}

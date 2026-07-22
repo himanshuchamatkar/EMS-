@@ -25,9 +25,9 @@ export default function IncidentOfferGate() {
   if (!online || !offer) return null;
 
   const handleAccept = async () => {
-    const ok = await accept();
-    if (ok) {
-      startIncident(offer.emergency);
+    const updatedEmergency = await accept();
+    if (updatedEmergency) {
+      startIncident(updatedEmergency);
       navigation.navigate('Main', { screen: 'Map' });
     }
   };

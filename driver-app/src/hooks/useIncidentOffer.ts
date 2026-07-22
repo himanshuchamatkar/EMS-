@@ -78,18 +78,19 @@ export function useIncidentOffer(socket: Socket, ambulanceId: string | null) {
     };
   }, [socket, ambulanceId]);
 
-  const accept = useCallback(async (): Promise<boolean> => {
-    if (!offer || !ambulanceId) return false;
+  const accept = useCallback(async (): Promise<Emergency | null> => {
+    if (!offer || !ambulanceId) return null;
     const emergencyId = offer.emergency.id;
     if (mode === 'offer') suppressAssignedEchoRef.current = emergencyId;
     setBusy(true);
     try {
+      let updatedEmergency = offer.emergency;
       if (mode === 'offer') {
-        await api.acceptOffer(emergencyId, ambulanceId);
+        const res = await api.acceptOffer(emergencyId, ambulanceId);
+        updatedEmergency = res.emergency;
       }
-      // 'direct' assignments are already committed backend-side — nothing to call.
       setOffer(null);
-      return true;
+      return updatedEmergency;
     } catch (err) {
       if (mode === 'offer') suppressAssignedEchoRef.current = null;
       const message = err instanceof Error ? err.message : String(err);
@@ -100,7 +101,7 @@ export function useIncidentOffer(socket: Socket, ambulanceId: string | null) {
         setOffer(null);
         Alert.alert('Incident Unavailable', message || 'This incident has already been assigned to another ambulance.');
       }
-      return false;
+      return null;
     } finally {
       setBusy(false);
     }

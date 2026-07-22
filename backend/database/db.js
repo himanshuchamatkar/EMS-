@@ -410,7 +410,7 @@ const db = {
       if (error) console.error(`Error locking emergency ${emergencyId} on Supabase:`, error);
     });
 
-    return { error: null, emergency: updated };
+    return { error: null, emergency: db.getEmergencyById(emergencyId) };
   },
 
   deleteEmergency(id) {
