@@ -356,3 +356,27 @@ exports.getHospitalsList = (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+exports.deleteHospital = (req, res) => {
+  try {
+    const { id } = req.params;
+    const success = db.deleteHospital(id);
+    if (!success) {
+      return res.status(404).json({ error: 'Hospital not found' });
+    }
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('hospitals:list', db.getHospitals().map(h => {
+        const { password_hash: _, ...hData } = h;
+        const facilities = db.getHospitalFacilities(h.hospital_id);
+        return { ...hData, facilities };
+      }));
+      io.emit('emergencies:list', db.getEmergencies());
+    }
+
+    res.json({ message: 'Hospital deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};

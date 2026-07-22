@@ -19,6 +19,7 @@ const Sidebar = ({
   onDeleteAmbulanceClick,
   onDeleteEmergencyClick,
   onDeleteAllEmergenciesClick,
+  onDeleteHospitalClick,
   onStatusChange,
   onRelocateClick,
 }) => {
@@ -396,6 +397,15 @@ const Sidebar = ({
                         >
                           <MapPin className="w-3.5 h-3.5" />
                         </button>
+                        {onDeleteHospitalClick && (
+                          <button
+                            onClick={() => onDeleteHospitalClick(h.hospital_id)}
+                            title="Delete Hospital"
+                            className="p-1 rounded hover:bg-dark-hover text-brand-red hover:text-red-400 transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>

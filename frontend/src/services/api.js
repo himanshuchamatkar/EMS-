@@ -91,6 +91,11 @@ export const api = {
       method: 'DELETE'
     });
   },
+  deleteHospital(id) {
+    return request(`/hospitals/${id}`, {
+      method: 'DELETE'
+    });
+  },
 
   // Emergencies
   getEmergencies() {

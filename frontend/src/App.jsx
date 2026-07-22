@@ -254,6 +254,19 @@ const App = () => {
     }
   };
 
+  const handleDeleteHospital = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this hospital?')) return;
+    try {
+      await api.deleteHospital(id);
+      addToast('Hospital successfully removed.', 'info');
+      if (selectedItem && selectedItem.hospital_id === id) {
+        setSelectedItem(null);
+      }
+    } catch (err) {
+      addToast(`Error deleting: ${err.message}`, 'danger');
+    }
+  };
+
   const handleDeleteEmergency = async (id) => {
     if (!window.confirm('Delete this emergency log?')) return;
     try {
@@ -496,6 +509,7 @@ const App = () => {
             onDeleteAmbulanceClick={handleDeleteAmbulance}
             onDeleteEmergencyClick={handleDeleteEmergency}
             onDeleteAllEmergenciesClick={handleDeleteAllEmergencies}
+            onDeleteHospitalClick={handleDeleteHospital}
             onStatusChange={handleStatusChange}
             onRelocateClick={handleRelocateClick}
           />

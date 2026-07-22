@@ -212,9 +212,43 @@ const db = {
       return emp;
     });
 
-    // Async delete on Supabase in the background
-    supabase.from('ambulances').delete().eq('id', id).then(({ error }) => {
-      if (error) console.error(`Error deleting ambulance ${id} from Supabase:`, error);
+    // Delete dispatch logs for this ambulance first to prevent foreign key errors on Supabase
+    supabase.from('dispatch_logs').delete().eq('ambulance_id', id).then(({ error }) => {
+      if (error) console.error(`Error deleting ambulance ${id} dispatch logs:`, error);
+      
+      // Now delete the ambulance
+      supabase.from('ambulances').delete().eq('id', id).then(({ error }) => {
+        if (error) console.error(`Error deleting ambulance ${id} from Supabase:`, error);
+      });
+    });
+
+    return true;
+  },
+
+  deleteHospital(id) {
+    const index = dbCache.hospitals.findIndex(h => h.hospital_id === id);
+    if (index === -1) return false;
+
+    dbCache.hospitals.splice(index, 1);
+
+    // Clean up facilities in cache
+    const fIndex = dbCache.hospital_facilities.findIndex(f => f.hospital_id === id);
+    if (fIndex !== -1) dbCache.hospital_facilities.splice(fIndex, 1);
+
+    // Clean up incident assignments in cache
+    dbCache.emergencies = dbCache.emergencies.map(emp => {
+      if (emp.assigned_hospital_id === id) {
+        return { ...emp, assigned_hospital_id: null, assigned_hospital: null };
+      }
+      return emp;
+    });
+
+    // Clean up requests in cache
+    dbCache.emergency_hospital_requests = dbCache.emergency_hospital_requests.filter(r => r.hospital_id !== id);
+
+    // Async delete on Supabase in the background (cascades to facilities/requests)
+    supabase.from('hospitals').delete().eq('hospital_id', id).then(({ error }) => {
+      if (error) console.error(`Error deleting hospital ${id} from Supabase:`, error);
     });
 
     return true;

@@ -12,5 +12,6 @@ router.get('/emergencies', auth, hospitalController.getEmergencies);
 router.post('/emergencies/accept', auth, hospitalController.acceptEmergency);
 router.post('/emergencies/reject', auth, hospitalController.rejectEmergency);
 router.get('/list', hospitalController.getHospitalsList);
+router.delete('/:id', hospitalController.deleteHospital);
 
 module.exports = router;

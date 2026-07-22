@@ -109,7 +109,9 @@ export default function MapScreen() {
     );
   }
 
-  if (emergency && !emergency.assigned_hospital_id) {
+  const isPickedUp = stage !== 'toScene' && stage !== 'arrivedAtScene';
+
+  if (emergency && !emergency.assigned_hospital_id && isPickedUp) {
     return (
       <View style={styles.container}>
         {header()}
@@ -119,7 +121,7 @@ export default function MapScreen() {
             WAITING FOR HOSPITAL CONFIRMATION
           </Text>
           <Text style={{ color: theme.inkMuted, fontSize: 13, textAlign: 'center', lineHeight: 20 }}>
-            You have accepted the incident. We are waiting for a nearby hospital to confirm bed availability before dispatching your navigation route.
+            Patient is on board. We are waiting for a nearby hospital to confirm bed availability before dispatching your navigation route.
           </Text>
         </View>
       </View>
@@ -191,6 +193,15 @@ export default function MapScreen() {
         <TouchableOpacity onPress={handleRecenter} hitSlop={8}>
           <Feather name="crosshair" size={18} color={theme.accentInk} />
         </TouchableOpacity>
+      )}
+
+      {emergency && !emergency.assigned_hospital_id && (
+        <View style={{ backgroundColor: '#FEF3C7', borderBottomWidth: 1, borderBottomColor: '#FDE68A', paddingVertical: 10, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Feather name="alert-triangle" size={15} color="#D97706" />
+          <Text style={{ color: '#92400E', fontSize: 11.5, fontWeight: '700', flex: 1 }}>
+            Waiting for hospital allotment. Proceed to pick up patient.
+          </Text>
+        </View>
       )}
 
       <WebView
