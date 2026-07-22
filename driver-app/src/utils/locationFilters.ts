@@ -1,6 +1,6 @@
 import type { Coords } from '../services/location';
 
-export const MAX_ACCURACY_METERS = 30;
+export const MAX_ACCURACY_METERS = 200;
 export const MAX_SPEED_KMH = 180;
 export const MIN_MOVING_SPEED_KMH = 2;
 
