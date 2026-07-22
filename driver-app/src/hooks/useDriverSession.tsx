@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { Alert } from 'react-native';
 import type { Socket } from 'socket.io-client';
 import type { Ambulance, AmbulanceStatus, DriverIdentity } from '../types';
 import { getDriverIdentity, saveDriverIdentity, clearDriverIdentity } from '../services/storage';
@@ -94,6 +95,9 @@ export function DriverSessionProvider({ children }: { children: ReactNode }) {
     try {
       const updated = await api.updateAmbulanceStatus(ambulanceId, status);
       setAmbulanceStatusState(updated.status);
+    } catch (err) {
+      console.error('Status update failed:', err);
+      Alert.alert('Status Update Failed', err instanceof Error ? err.message : String(err));
     } finally {
       setStatusUpdating(false);
     }

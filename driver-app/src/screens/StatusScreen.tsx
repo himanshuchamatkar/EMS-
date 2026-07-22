@@ -108,6 +108,11 @@ export default function StatusScreen({ navigation }: Props) {
             <Text style={[styles.diagValue, { color: socketColor }]}>{socketLabel}</Text>
           </View>
         </View>
+
+        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOutRequest}>
+          <Feather name="log-out" size={15} color={theme.danger} />
+          <Text style={styles.signOutButtonText}>SIGN OUT VEHICLE</Text>
+        </TouchableOpacity>
       </ScrollView>
     </View>
   );
@@ -152,4 +157,18 @@ const getStyles = (theme: ThemeColors) =>
     },
     diagLabel: { fontSize: 11.5, color: theme.inkMuted, fontWeight: '600' },
     diagValue: { fontSize: 13, fontWeight: '700' },
+
+    signOutButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      borderWidth: 1,
+      borderColor: theme.danger,
+      borderRadius: 12,
+      paddingVertical: 14,
+      marginTop: 8,
+      alignSelf: 'stretch',
+    },
+    signOutButtonText: { color: theme.danger, fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
   });

@@ -55,8 +55,14 @@ export function useLocationTracking(ambulanceId: string | null, online: boolean)
             // expo-location reports speed in m/s; the backend/admin panel display km/h.
             ...(accepted.speed != null && accepted.speed >= 0 ? { speed: Math.round(accepted.speed * 3.6) } : {}),
           })
+          .then(() => {
+            if (!cancelled) setPermissionError(null);
+          })
           .catch((err) => {
             console.warn('Location push failed:', err instanceof Error ? err.message : err);
+            if (!cancelled) {
+              setPermissionError(`Sync failed: ${err instanceof Error ? err.message : String(err)}`);
+            }
           });
       });
     }
