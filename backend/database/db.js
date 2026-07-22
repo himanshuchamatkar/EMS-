@@ -531,7 +531,10 @@ const db = {
 
     dbCache.hospitals.push(newHospital);
 
-    supabase.from('hospitals').insert([newHospital]).then(({ error }) => {
+    // Strip non-persisted columns before inserting into Supabase
+    const { hospital_type, registration_number, ...persistedHospital } = newHospital;
+
+    supabase.from('hospitals').insert([persistedHospital]).then(({ error }) => {
       if (error) console.error('Error adding hospital to Supabase:', error);
       db.syncHospitalsFromSupabase();
     });
@@ -572,10 +575,15 @@ const db = {
     };
     const updated = dbCache.hospitals[index];
 
-    supabase.from('hospitals').update(updates).eq('hospital_id', id).then(({ error }) => {
-      if (error) console.error(`Error updating hospital ${id} on Supabase:`, error);
-      db.syncHospitalsFromSupabase();
-    });
+    // Strip non-persisted columns before updating in Supabase
+    const { hospital_type, registration_number, ...persistedUpdates } = updates;
+
+    if (Object.keys(persistedUpdates).length > 0) {
+      supabase.from('hospitals').update(persistedUpdates).eq('hospital_id', id).then(({ error }) => {
+        if (error) console.error(`Error updating hospital ${id} on Supabase:`, error);
+        db.syncHospitalsFromSupabase();
+      });
+    }
 
     return updated;
   },

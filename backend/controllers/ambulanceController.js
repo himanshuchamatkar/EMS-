@@ -1,6 +1,6 @@
 const db = require('../database/db');
 
-const MAX_ACCURACY_METERS = 100;
+const MAX_ACCURACY_METERS = 200;
 const MAX_SPEED_KMH = 180;
 
 /** Returns an error message if a GPS-bearing update is physically implausible, else null. */
