@@ -18,8 +18,8 @@ const server = http.createServer(app);
 // Enable CORS for API requests
 app.use(cors({
   origin: '*', // Allow frontend development port or custom client links
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'apikey']
 }));
 
 app.use(express.json());
@@ -28,8 +28,7 @@ app.use(express.json());
 const io = socketIo(server, {
   cors: {
     origin: '*',
-    methods: ['GET', 'POST'],
-    credentials: true
+    methods: ['GET', 'POST']
   }
 });
 
