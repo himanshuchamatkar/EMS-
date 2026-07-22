@@ -181,6 +181,16 @@ export default function App() {
           if (updatedEmergency.assigned_hospital_id && updatedEmergency.assigned_hospital_id !== hospital.hospital_id) {
             return null; // Close alert if someone else accepted
           }
+          if (prev.localAccepted && updatedEmergency.assigned_ambulance) {
+            setTimeout(() => {
+              alert(`Ambulance confirmed! Incidents details updated.`);
+            }, 100);
+            return null;
+          }
+          return {
+            ...prev,
+            emergency: updatedEmergency
+          };
         }
         return prev;
       });
@@ -454,11 +464,17 @@ export default function App() {
         return;
       }
       
-      setIncomingAlert(null);
       fetchRequests();
       
       if (accept) {
-        alert('Incident Accepted! Dispatch dashboard and nearby ambulances have been routed to your hospital.');
+        if (incomingAlert.emergency.assigned_ambulance) {
+          setIncomingAlert(null);
+          alert('Incident Accepted! Coordination Complete: Ambulance is en-route.');
+        } else {
+          setIncomingAlert(prev => prev ? { ...prev, localAccepted: true } : null);
+        }
+      } else {
+        setIncomingAlert(null);
       }
     } catch (err) {
       console.error('Emergency response error:', err);
@@ -692,76 +708,106 @@ export default function App() {
       {incomingAlert && (
         <div className="alert-overlay">
           <div className="alert-modal">
-            <div className="alert-modal-header">
-              <h3>
-                <ShieldAlert className="alert-pulse-icon" style={{ color: '#fff' }} />
-                NEW EMERGENCY PATIENT REQUEST
-              </h3>
-              <div style={{ background: 'rgba(0,0,0,0.2)', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold' }}>
-                PRIORITY: {incomingAlert.emergency.priority.toUpperCase()}
-              </div>
-            </div>
-            
-            <div className="alert-modal-body">
-              <div className="emergency-detail-box">
-                <div className="emergency-info-list">
-                  <div className="emergency-info-item">
-                    <span className="emergency-info-label">Description</span>
-                    <span className="emergency-info-value" style={{ fontWeight: '600' }}>
-                      {incomingAlert.emergency.description}
-                    </span>
+            {incomingAlert.localAccepted ? (
+              <>
+                <div className="alert-modal-header" style={{ backgroundColor: 'var(--color-blue)' }}>
+                  <h3>
+                    <Activity className="alert-pulse-icon" style={{ color: '#fff' }} />
+                    WAITING FOR DISPATCH
+                  </h3>
+                </div>
+                <div className="alert-modal-body" style={{ textAlign: 'center', padding: '2rem 1.5rem' }}>
+                  <div className="waiting-spinner-container" style={{ margin: '1.5rem 0' }}>
+                    <Activity size={48} className="alert-pulse-icon" style={{ color: 'var(--color-blue)', animationDuration: '1.5s' }} />
                   </div>
-                  <div className="emergency-info-item">
-                    <span className="emergency-info-label">Location (Coordinates)</span>
-                    <span className="emergency-info-value">
-                      {incomingAlert.emergency.latitude.toFixed(5)}, {incomingAlert.emergency.longitude.toFixed(5)}
-                    </span>
-                  </div>
-                  <div className="emergency-info-item">
-                    <span className="emergency-info-label">Distance from Hospital</span>
-                    <span className="emergency-info-value" style={{ color: 'var(--color-blue)', fontWeight: 'bold' }}>
-                      {incomingAlert.distance} km
-                    </span>
+                  <h4 style={{ fontSize: '18px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
+                    Hospital Accepted
+                  </h4>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '13px', lineHeight: '1.6', marginBottom: '2rem' }}>
+                    Waiting for driver / ambulance confirmation to bring the patient to your facility.
+                  </p>
+                  <div className="alert-actions" style={{ justifyContent: 'center' }}>
+                    <button className="btn btn-reject btn" onClick={() => handleEmergencyResponse(false)}>
+                      <XCircle size={18} />
+                      CANCEL RESPONSE
+                    </button>
                   </div>
                 </div>
-
-                <div className="emergency-media-preview">
-                  <span className="emergency-info-label">Media Attachments</span>
-                  {incomingAlert.emergency.photo_url ? (
-                    <a href={incomingAlert.emergency.photo_url} target="_blank" rel="noreferrer">
-                      <img src={incomingAlert.emergency.photo_url} className="emergency-photo" alt="Emergency" />
-                    </a>
-                  ) : (
-                    <div style={{ color: 'var(--text-muted)', fontSize: '11px', textAlign: 'center', padding: '1.5rem 0' }}>
-                      No Photo Attached
+              </>
+            ) : (
+              <>
+                <div className="alert-modal-header">
+                  <h3>
+                    <ShieldAlert className="alert-pulse-icon" style={{ color: '#fff' }} />
+                    NEW EMERGENCY PATIENT REQUEST
+                  </h3>
+                  <div style={{ background: 'rgba(0,0,0,0.2)', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold' }}>
+                    PRIORITY: {incomingAlert.emergency.priority.toUpperCase()}
+                  </div>
+                </div>
+                
+                <div className="alert-modal-body">
+                  <div className="emergency-detail-box">
+                    <div className="emergency-info-list">
+                      <div className="emergency-info-item">
+                        <span className="emergency-info-label">Description</span>
+                        <span className="emergency-info-value" style={{ fontWeight: '600' }}>
+                          {incomingAlert.emergency.description}
+                        </span>
+                      </div>
+                      <div className="emergency-info-item">
+                        <span className="emergency-info-label">Location (Coordinates)</span>
+                        <span className="emergency-info-value">
+                          {incomingAlert.emergency.latitude.toFixed(5)}, {incomingAlert.emergency.longitude.toFixed(5)}
+                        </span>
+                      </div>
+                      <div className="emergency-info-item">
+                        <span className="emergency-info-label">Distance from Hospital</span>
+                        <span className="emergency-info-value" style={{ color: 'var(--color-blue)', fontWeight: 'bold' }}>
+                          {incomingAlert.distance} km
+                        </span>
+                      </div>
                     </div>
-                  )}
-                  <div style={{ display: 'flex', gap: '0.25rem', marginTop: '0.25rem' }}>
-                    {incomingAlert.emergency.video_url && (
-                      <a href={incomingAlert.emergency.video_url} target="_blank" rel="noreferrer" className="media-badge">
-                        🎥 Video Link
-                      </a>
-                    )}
-                    {incomingAlert.emergency.audio_url && (
-                      <a href={incomingAlert.emergency.audio_url} target="_blank" rel="noreferrer" className="media-badge">
-                        🎙️ Audio Link
-                      </a>
-                    )}
+
+                    <div className="emergency-media-preview">
+                      <span className="emergency-info-label">Media Attachments</span>
+                      {incomingAlert.emergency.photo_url ? (
+                        <a href={incomingAlert.emergency.photo_url} target="_blank" rel="noreferrer">
+                          <img src={incomingAlert.emergency.photo_url} className="emergency-photo" alt="Emergency" />
+                        </a>
+                      ) : (
+                        <div style={{ color: 'var(--text-muted)', fontSize: '11px', textAlign: 'center', padding: '1.5rem 0' }}>
+                          No Photo Attached
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', gap: '0.25rem', marginTop: '0.25rem' }}>
+                        {incomingAlert.emergency.video_url && (
+                          <a href={incomingAlert.emergency.video_url} target="_blank" rel="noreferrer" className="media-badge">
+                            🎥 Video Link
+                          </a>
+                        )}
+                        {incomingAlert.emergency.audio_url && (
+                          <a href={incomingAlert.emergency.audio_url} target="_blank" rel="noreferrer" className="media-badge">
+                            🎙️ Audio Link
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="alert-actions">
+                    <button className="btn btn-accept btn" onClick={() => handleEmergencyResponse(true)}>
+                      <CheckCircle2 size={18} />
+                      ACCEPT PATIENT
+                    </button>
+                    <button className="btn btn-reject btn" onClick={() => handleEmergencyResponse(false)}>
+                      <XCircle size={18} />
+                      REJECT REQUEST
+                    </button>
                   </div>
                 </div>
-              </div>
-
-              <div className="alert-actions">
-                <button className="btn btn-accept btn" onClick={() => handleEmergencyResponse(true)}>
-                  <CheckCircle2 size={18} />
-                  ACCEPT PATIENT
-                </button>
-                <button className="btn btn-reject btn" onClick={() => handleEmergencyResponse(false)}>
-                  <XCircle size={18} />
-                  REJECT REQUEST
-                </button>
-              </div>
-            </div>
+              </>
+            )}
           </div>
         </div>
       )}

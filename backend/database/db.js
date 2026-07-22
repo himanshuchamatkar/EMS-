@@ -270,6 +270,28 @@ const db = {
     }
   },
 
+  async syncHospitalsFromSupabase() {
+    try {
+      const { data, error } = await supabase.from('hospitals').select('*');
+      if (!error && data) {
+        dbCache.hospitals = data;
+      }
+    } catch (err) {
+      console.error('Error syncing hospitals from Supabase:', err);
+    }
+  },
+
+  async syncHospitalFacilitiesFromSupabase() {
+    try {
+      const { data, error } = await supabase.from('hospital_facilities').select('*');
+      if (!error && data) {
+        dbCache.hospital_facilities = data;
+      }
+    } catch (err) {
+      console.error('Error syncing hospital facilities from Supabase:', err);
+    }
+  },
+
   addEmergency(emergency) {
     const newEmergency = {
       id: emergency.id || uuidv4(),
@@ -364,8 +386,9 @@ const db = {
     const emp = dbCache.emergencies[index];
     dbCache.emergencies.splice(index, 1);
 
-    // Remove associated dispatch logs from cache as well
+    // Remove associated dispatch logs and hospital requests from cache as well
     dbCache.dispatch_logs = dbCache.dispatch_logs.filter(log => log.emergency_id !== id);
+    dbCache.emergency_hospital_requests = dbCache.emergency_hospital_requests.filter(req => req.incident_id !== id);
 
     // Reset assigned ambulance status in cache
     if (emp.assigned_ambulance) {
@@ -376,9 +399,12 @@ const db = {
       }
     }
 
-    // Async delete on Supabase in proper order (dispatch_logs first to satisfy FK constraint, then emergencies)
+    // Async delete on Supabase in proper order (requests & logs first to satisfy FK constraints, then emergencies)
     (async () => {
       try {
+        const { error: reqError } = await supabase.from('emergency_hospital_requests').delete().eq('incident_id', id);
+        if (reqError) console.error(`Error deleting hospital requests for emergency ${id} from Supabase:`, reqError);
+
         const { error: logError } = await supabase.from('dispatch_logs').delete().eq('emergency_id', id);
         if (logError) console.error(`Error deleting dispatch logs for emergency ${id} from Supabase:`, logError);
 
@@ -395,6 +421,7 @@ const db = {
   deleteAllEmergencies() {
     dbCache.emergencies = [];
     dbCache.dispatch_logs = [];
+    dbCache.emergency_hospital_requests = [];
 
     // Reset all ambulances status to Available
     dbCache.ambulances = dbCache.ambulances.map(a => ({
@@ -406,6 +433,7 @@ const db = {
 
     (async () => {
       try {
+        await supabase.from('emergency_hospital_requests').delete().neq('id', '00000000-0000-0000-0000-000000000000');
         await supabase.from('dispatch_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
         await supabase.from('emergencies').delete().neq('id', '00000000-0000-0000-0000-000000000000');
       } catch (err) {
@@ -505,6 +533,7 @@ const db = {
 
     supabase.from('hospitals').insert([newHospital]).then(({ error }) => {
       if (error) console.error('Error adding hospital to Supabase:', error);
+      db.syncHospitalsFromSupabase();
     });
 
     const defaultFacilities = {
@@ -526,6 +555,7 @@ const db = {
     dbCache.hospital_facilities.push(defaultFacilities);
     supabase.from('hospital_facilities').insert([defaultFacilities]).then(({ error }) => {
       if (error) console.error('Error adding default hospital facilities to Supabase:', error);
+      db.syncHospitalFacilitiesFromSupabase();
     });
 
     return newHospital;
@@ -544,6 +574,7 @@ const db = {
 
     supabase.from('hospitals').update(updates).eq('hospital_id', id).then(({ error }) => {
       if (error) console.error(`Error updating hospital ${id} on Supabase:`, error);
+      db.syncHospitalsFromSupabase();
     });
 
     return updated;
@@ -563,6 +594,7 @@ const db = {
       dbCache.hospital_facilities.push(newFac);
       supabase.from('hospital_facilities').insert([newFac]).then(({ error }) => {
         if (error) console.error('Error inserting hospital facilities on update:', error);
+        db.syncHospitalFacilitiesFromSupabase();
       });
       return newFac;
     }
@@ -575,6 +607,7 @@ const db = {
 
     supabase.from('hospital_facilities').update(updates).eq('hospital_id', hospitalId).then(({ error }) => {
       if (error) console.error('Error updating hospital facilities on Supabase:', error);
+      db.syncHospitalFacilitiesFromSupabase();
     });
 
     return updated;

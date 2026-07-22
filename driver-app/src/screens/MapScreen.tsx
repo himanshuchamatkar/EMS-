@@ -109,6 +109,23 @@ export default function MapScreen() {
     );
   }
 
+  if (emergency && !emergency.assigned_hospital_id) {
+    return (
+      <View style={styles.container}>
+        {header()}
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.bg, padding: 24 }}>
+          <ActivityIndicator size="large" color={theme.accent} style={{ marginBottom: 24 }} />
+          <Text style={{ color: theme.ink, fontSize: 18, fontWeight: 'bold', textAlign: 'center', marginBottom: 12 }}>
+            WAITING FOR HOSPITAL CONFIRMATION
+          </Text>
+          <Text style={{ color: theme.inkMuted, fontSize: 13, textAlign: 'center', lineHeight: 20 }}>
+            You have accepted the incident. We are waiting for a nearby hospital to confirm bed availability before dispatching your navigation route.
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
   if (stage === 'handoverComplete') {
     return (
       <View style={styles.container}>

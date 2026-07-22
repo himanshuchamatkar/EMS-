@@ -43,6 +43,10 @@ export interface Emergency {
     longitude: number;
     phone: string;
     address: string;
+    hospital_type?: string;
+    facilities?: {
+      emergency_beds: number;
+    } | null;
   } | null;
 }
 
