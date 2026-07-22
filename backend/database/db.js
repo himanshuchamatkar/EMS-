@@ -297,7 +297,14 @@ const db = {
     try {
       const { data, error } = await supabase.from('emergencies').select('*');
       if (!error && data) {
-        dbCache.emergencies = data;
+        dbCache.emergencies = data.map(newEmp => {
+          const oldEmp = dbCache.emergencies.find(e => e.id === newEmp.id);
+          return {
+            ...newEmp,
+            offered_to: oldEmp?.offered_to || [],
+            rejected_by: oldEmp?.rejected_by || []
+          };
+        });
       }
     } catch (err) {
       console.error('Error syncing emergencies from Supabase:', err);
