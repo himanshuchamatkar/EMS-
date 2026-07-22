@@ -1,3 +1,8 @@
+-- 0. Drop existing hospital tables to clear out any old/mismatched schemas
+drop table if exists emergency_hospital_requests cascade;
+drop table if exists hospital_facilities cascade;
+drop table if exists hospitals cascade;
+
 -- Enable UUID extension if not enabled
 create extension if not exists "uuid-ossp";
 
