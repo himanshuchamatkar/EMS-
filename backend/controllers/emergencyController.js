@@ -1,6 +1,54 @@
 const db = require('../database/db');
 const { autoAssignAmbulance, offerToAllCandidates } = require('../services/dispatchEngine');
 const modeService = require('../services/modeService');
+const { calculateDistance } = require('../utils/haversine');
+
+function matchHospitalsForEmergency(emergency, io) {
+  try {
+    const hospitals = db.getHospitals().filter(h => h.emergency_status === 'OPEN');
+    if (hospitals.length === 0) {
+      console.log('No open hospitals available for matching');
+      return;
+    }
+
+    const sortedHospitals = hospitals.map(h => {
+      const distance = calculateDistance(
+        emergency.latitude,
+        emergency.longitude,
+        h.latitude,
+        h.longitude
+      );
+      return { hospital: h, distance };
+    }).sort((a, b) => a.distance - b.distance);
+
+    // Limit to hospitals within 15km, fallback to nearest 3
+    let matched = sortedHospitals.filter(item => item.distance <= 15);
+    if (matched.length === 0) {
+      matched = sortedHospitals.slice(0, 3);
+    }
+
+    matched.forEach(item => {
+      const { hospital, distance } = item;
+      const request = db.addHospitalRequest({
+        incident_id: emergency.id,
+        hospital_id: hospital.hospital_id,
+        status: 'Pending'
+      });
+
+      if (io) {
+        io.to(`hospital:${hospital.hospital_id}`).emit('emergency:hospital_request', {
+          request_id: request.id,
+          emergency,
+          distance
+        });
+      }
+    });
+
+    console.log(`Matched and sent emergency requests to ${matched.length} hospital(s)`);
+  } catch (error) {
+    console.error('Error matching hospitals for emergency:', error);
+  }
+}
 
 exports.getEmergencies = (req, res) => {
   try {
@@ -55,6 +103,9 @@ exports.createEmergency = (req, res) => {
       io.emit('emergency:created', newEmergency);
       io.emit('emergencies:list', db.getEmergencies());
     }
+
+    // Match and notify open hospitals
+    matchHospitalsForEmergency(newEmergency, io);
 
     if (modeService.getMode() === 'live') {
       // Live mode, "First Responder Wins": broadcast the offer to every

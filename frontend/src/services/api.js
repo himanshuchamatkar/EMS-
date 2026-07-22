@@ -169,5 +169,8 @@ export const api = {
   },
   setMode(mode) {
     return request('/system/mode', { method: 'POST', body: { mode } });
+  },
+  getHospitals() {
+    return request('/hospitals/list');
   }
 };

@@ -35,6 +35,15 @@ export interface Emergency {
   video_url?: string | null;
   audio_url?: string | null;
   report_source?: 'admin' | 'citizen';
+  assigned_hospital_id?: string | null;
+  assigned_hospital?: {
+    hospital_id: string;
+    hospital_name: string;
+    latitude: number;
+    longitude: number;
+    phone: string;
+    address: string;
+  } | null;
 }
 
 export interface DispatchOffer {

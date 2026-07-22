@@ -15,7 +15,8 @@ const App = () => {
     setEmergencies,
     isSimulating,
     connected,
-    mode
+    mode,
+    hospitals
   } = useSocket();
 
   // Selected items for map zooming / dispatch details
@@ -497,6 +498,7 @@ const App = () => {
             <MapContainer
               ambulances={ambulances}
               emergencies={emergencies}
+              hospitals={hospitals}
               mapClickMode={mapClickMode}
               onMapClick={handleMapClick}
               selectedItem={selectedItem}

@@ -9,6 +9,11 @@ function registerSocketHandlers(io) {
     // Send initial state to the connected client
     socket.emit('ambulances:list', db.getAmbulances());
     socket.emit('emergencies:list', db.getEmergencies());
+    socket.emit('hospitals:list', db.getHospitals().map(h => {
+      const { password_hash, ...hData } = h;
+      const facilities = db.getHospitalFacilities(h.hospital_id);
+      return { ...hData, facilities };
+    }));
     socket.emit('simulation:state', { running: simulationEngine.isRunning() });
     socket.emit('system:mode', { mode: modeService.getMode() });
 
@@ -34,6 +39,15 @@ function registerSocketHandlers(io) {
       console.log(`Driver registered: socket ${socket.id} -> ambulance ${ambulance_id}`);
     });
 
+    // Hospital dashboard registers which hospital it represents so the server can
+    // target that single device with emergency offers.
+    socket.on('hospital:register', ({ hospital_id } = {}) => {
+      if (!hospital_id) return;
+      socket.join(`hospital:${hospital_id}`);
+      socket.data.hospitalId = hospital_id;
+      console.log(`Hospital registered: socket ${socket.id} -> hospital ${hospital_id}`);
+    });
+ 
     socket.on('disconnect', () => {
       console.log(`Client disconnected: ${socket.id}`);
     });

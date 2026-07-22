@@ -9,6 +9,7 @@ const emergencyRoutes = require('./routes/emergencyRoutes');
 const dispatchRoutes = require('./routes/dispatchRoutes');
 const simulationRoutes = require('./routes/simulationRoutes');
 const systemRoutes = require('./routes/systemRoutes');
+const hospitalRoutes = require('./routes/hospitalRoutes');
 const { registerSocketHandlers } = require('./sockets/socketHandler');
 
 const app = express();
@@ -41,6 +42,7 @@ app.use('/api/emergencies', emergencyRoutes);
 app.use('/api/dispatch', dispatchRoutes);
 app.use('/api/simulation', simulationRoutes);
 app.use('/api/system', systemRoutes);
+app.use('/api/hospitals', hospitalRoutes);
 
 // Simple Status Endpoint
 app.get('/api/status', (req, res) => {

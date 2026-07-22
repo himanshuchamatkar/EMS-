@@ -17,6 +17,7 @@ export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const [ambulances, setAmbulances] = useState([]);
   const [emergencies, setEmergencies] = useState([]);
+  const [hospitals, setHospitals] = useState([]);
   const [isSimulating, setIsSimulating] = useState(false);
   const [connected, setConnected] = useState(false);
   const [mode, setModeState] = useState('simulation'); // 'simulation' | 'live'
@@ -110,6 +111,19 @@ export const SocketProvider = ({ children }) => {
       setModeState(newMode);
     });
 
+    socketInstance.on('hospitals:list', (list) => {
+      setHospitals(list);
+    });
+
+    socketInstance.on('hospital:updated', (updatedHospital) => {
+      setHospitals((prev) => {
+        if (prev.some(h => h.hospital_id === updatedHospital.hospital_id)) {
+          return prev.map((h) => (h.hospital_id === updatedHospital.hospital_id ? { ...h, ...updatedHospital } : h));
+        }
+        return [...prev, updatedHospital];
+      });
+    });
+
     setSocket(socketInstance);
 
     return () => {
@@ -125,6 +139,8 @@ export const SocketProvider = ({ children }) => {
         setAmbulances,
         emergencies,
         setEmergencies,
+        hospitals,
+        setHospitals,
         isSimulating,
         setIsSimulating,
         connected,

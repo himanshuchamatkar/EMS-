@@ -75,9 +75,33 @@ export function ActiveIncidentProvider({ children }: { children: ReactNode }) {
       reset();
       Alert.alert('Incident Cancelled', 'Dispatch has cancelled this assignment.');
     };
+
+    const handleHospitalAssigned = (data: { emergency: Emergency; hospital: any }) => {
+      if (emergencyRef.current?.id !== data.emergency.id) return;
+      setEmergency(data.emergency);
+      const mappedHosp = {
+        id: data.hospital.hospital_id,
+        name: data.hospital.hospital_name,
+        traumaLevel: data.hospital.hospital_type || 'General',
+        address: data.hospital.address,
+        latitude: data.hospital.latitude,
+        longitude: data.hospital.longitude,
+        bedsAvailable: data.hospital.facilities ? data.hospital.facilities.emergency_beds : 0,
+        phone: data.hospital.phone,
+        accepting: true
+      };
+      setSelectedHospital(mappedHosp);
+      Alert.alert(
+        'Hospital Route Assigned',
+        `Hospital "${data.hospital.hospital_name}" has accepted this incident and is routing you to their facility.`
+      );
+    };
+
     socket.on('dispatch:cancelled', handleCancelled);
+    socket.on('emergency:hospital_assigned', handleHospitalAssigned);
     return () => {
       socket.off('dispatch:cancelled', handleCancelled);
+      socket.off('emergency:hospital_assigned', handleHospitalAssigned);
     };
   }, [socket]);
 
@@ -86,7 +110,22 @@ export function ActiveIncidentProvider({ children }: { children: ReactNode }) {
     setStage(next.status === 'VICTIM_PICKED' ? 'toHospital' : 'toScene');
     setSceneArrivedAt(null);
     setHospitalArrivedAt(null);
-    setSelectedHospital(null);
+
+    let mappedHosp = null;
+    if (next.assigned_hospital) {
+      mappedHosp = {
+        id: next.assigned_hospital.hospital_id,
+        name: next.assigned_hospital.hospital_name,
+        traumaLevel: next.assigned_hospital.hospital_type || 'General',
+        address: next.assigned_hospital.address,
+        latitude: next.assigned_hospital.latitude,
+        longitude: next.assigned_hospital.longitude,
+        bedsAvailable: next.assigned_hospital.facilities ? next.assigned_hospital.facilities.emergency_beds : 0,
+        phone: next.assigned_hospital.phone,
+        accepting: true
+      };
+    }
+    setSelectedHospital(mappedHosp);
     setHospitalNavigationStarted(false);
     setHandoverDurationMinutes(null);
     incidentStartedAtRef.current = Date.now();

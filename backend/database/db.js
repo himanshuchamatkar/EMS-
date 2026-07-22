@@ -15,7 +15,10 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 let dbCache = {
   ambulances: [],
   emergencies: [],
-  dispatch_logs: []
+  dispatch_logs: [],
+  hospitals: [],
+  hospital_facilities: [],
+  emergency_hospital_requests: []
 };
 
 let initialized = false;
@@ -27,17 +30,26 @@ async function loadCache() {
     const { data: ambulances, error: err1 } = await supabase.from('ambulances').select('*');
     const { data: emergencies, error: err2 } = await supabase.from('emergencies').select('*');
     const { data: logs, error: err3 } = await supabase.from('dispatch_logs').select('*');
+    const { data: hospitals, error: err4 } = await supabase.from('hospitals').select('*');
+    const { data: facilities, error: err5 } = await supabase.from('hospital_facilities').select('*');
+    const { data: requests, error: err6 } = await supabase.from('emergency_hospital_requests').select('*');
 
     if (err1) console.error('Error loading ambulances from Supabase:', err1);
     if (err2) console.error('Error loading emergencies from Supabase:', err2);
     if (err3) console.error('Error loading dispatch logs from Supabase:', err3);
+    if (err4) console.error('Error loading hospitals from Supabase:', err4);
+    if (err5) console.error('Error loading facilities from Supabase:', err5);
+    if (err6) console.error('Error loading emergency hospital requests from Supabase:', err6);
 
     dbCache.ambulances = ambulances || [];
     dbCache.emergencies = emergencies || [];
     dbCache.dispatch_logs = logs || [];
+    dbCache.hospitals = hospitals || [];
+    dbCache.hospital_facilities = facilities || [];
+    dbCache.emergency_hospital_requests = requests || [];
     initialized = true;
-    
-    console.log(`Database cache loaded successfully. Ambulances: ${dbCache.ambulances.length}, Emergencies: ${dbCache.emergencies.length}, Logs: ${dbCache.dispatch_logs.length}`);
+
+    console.log(`Database cache loaded successfully. Ambulances: ${dbCache.ambulances.length}, Emergencies: ${dbCache.emergencies.length}, Logs: ${dbCache.dispatch_logs.length}, Hospitals: ${dbCache.hospitals.length}`);
   } catch (err) {
     console.error('Failed to load database cache from Supabase:', err);
   }
@@ -50,7 +62,7 @@ const db = {
   // Reset database back to default seed state
   reset() {
     console.log('Resetting database and seeding cache...');
-    
+
     // Synchronously update local cache to seed data
     dbCache.ambulances = [
       {
@@ -121,7 +133,7 @@ const db = {
         await supabase.from('dispatch_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
         await supabase.from('emergencies').delete().neq('id', '00000000-0000-0000-0000-000000000000');
         await supabase.from('ambulances').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-        
+
         await supabase.from('ambulances').insert(dbCache.ambulances);
         await supabase.from('emergencies').insert(dbCache.emergencies);
         await supabase.from('dispatch_logs').insert(dbCache.dispatch_logs);
@@ -151,10 +163,10 @@ const db = {
       created_at: new Date().toISOString(),
       ...ambulance
     };
-    
+
     // Update local cache
     dbCache.ambulances.push(newAmbulance);
-    
+
     // Async write to Supabase in the background
     supabase.from('ambulances').insert([newAmbulance]).then(({ error }) => {
       if (error) console.error('Error adding ambulance to Supabase:', error);
@@ -191,7 +203,7 @@ const db = {
     if (index === -1) return false;
 
     dbCache.ambulances.splice(index, 1);
-    
+
     // Clean up assignments in cache
     dbCache.emergencies = dbCache.emergencies.map(emp => {
       if (emp.assigned_ambulance === id) {
@@ -210,11 +222,41 @@ const db = {
 
   // Emergencies API
   getEmergencies() {
-    return dbCache.emergencies;
+    return dbCache.emergencies.map(emp => {
+      if (emp.assigned_hospital_id) {
+        const hosp = dbCache.hospitals.find(h => h.hospital_id === emp.assigned_hospital_id);
+        if (hosp) {
+          const { password_hash, ...hospData } = hosp;
+          const facilities = dbCache.hospital_facilities.find(f => f.hospital_id === emp.assigned_hospital_id);
+          emp.assigned_hospital = {
+            ...hospData,
+            facilities
+          };
+        }
+      } else {
+        emp.assigned_hospital = null;
+      }
+      return emp;
+    });
   },
 
   getEmergencyById(id) {
-    return dbCache.emergencies.find(emp => emp.id === id) || null;
+    const emp = dbCache.emergencies.find(e => e.id === id);
+    if (!emp) return null;
+    if (emp.assigned_hospital_id) {
+      const hosp = dbCache.hospitals.find(h => h.hospital_id === emp.assigned_hospital_id);
+      if (hosp) {
+        const { password_hash, ...hospData } = hosp;
+        const facilities = dbCache.hospital_facilities.find(f => f.hospital_id === emp.assigned_hospital_id);
+        emp.assigned_hospital = {
+          ...hospData,
+          facilities
+        };
+      }
+    } else {
+      emp.assigned_hospital = null;
+    }
+    return emp;
   },
 
   async syncEmergenciesFromSupabase() {
@@ -236,7 +278,7 @@ const db = {
       created_at: new Date().toISOString(),
       ...emergency
     };
-    
+
     // Update local cache
     dbCache.emergencies.push(newEmergency);
 
@@ -263,7 +305,7 @@ const db = {
 
     // Strip non-persisted in-memory fields before writing to Supabase
     const { offered_to, rejected_by, ...persistedUpdates } = updates;
-    
+
     // If updates has keys to persist, perform update
     if (Object.keys(persistedUpdates).length > 0) {
       supabase.from('emergencies').update(persistedUpdates).eq('id', id).then(({ error }) => {
@@ -400,7 +442,7 @@ const db = {
       status: 'Dispatched',
       ...log
     };
-    
+
     // Update local cache
     dbCache.dispatch_logs.push(newLog);
 
@@ -419,7 +461,7 @@ const db = {
     // Find latest log
     const latestLog = logs.sort((a, b) => new Date(b.assigned_time) - new Date(a.assigned_time))[0];
     const logIndex = dbCache.dispatch_logs.findIndex(log => log.id === latestLog.id);
-    
+
     if (logIndex !== -1) {
       dbCache.dispatch_logs[logIndex] = {
         ...dbCache.dispatch_logs[logIndex],
@@ -435,6 +477,153 @@ const db = {
       return updated;
     }
     return null;
+  },
+
+  // Hospital CRUD helpers
+  getHospitals() {
+    return dbCache.hospitals;
+  },
+  
+  getHospitalById(id) {
+    return dbCache.hospitals.find(h => h.hospital_id === id) || null;
+  },
+
+  getHospitalByEmail(email) {
+    return dbCache.hospitals.find(h => h.email.toLowerCase() === email.toLowerCase()) || null;
+  },
+
+  addHospital(hospital) {
+    const newHospital = {
+      hospital_id: hospital.hospital_id || uuidv4(),
+      emergency_status: 'CLOSED',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      ...hospital
+    };
+
+    dbCache.hospitals.push(newHospital);
+
+    supabase.from('hospitals').insert([newHospital]).then(({ error }) => {
+      if (error) console.error('Error adding hospital to Supabase:', error);
+    });
+
+    const defaultFacilities = {
+      hospital_id: newHospital.hospital_id,
+      icu_count: 0,
+      ventilator_count: 0,
+      ct_available: false,
+      mri_available: false,
+      xray_available: false,
+      blood_bank: false,
+      ot_available: false,
+      emergency_dept_available: false,
+      emergency_24x7: false,
+      trauma_facility: false,
+      total_beds: 0,
+      emergency_beds: 0,
+      specialists: []
+    };
+    dbCache.hospital_facilities.push(defaultFacilities);
+    supabase.from('hospital_facilities').insert([defaultFacilities]).then(({ error }) => {
+      if (error) console.error('Error adding default hospital facilities to Supabase:', error);
+    });
+
+    return newHospital;
+  },
+
+  updateHospital(id, updates) {
+    const index = dbCache.hospitals.findIndex(h => h.hospital_id === id);
+    if (index === -1) return null;
+
+    dbCache.hospitals[index] = {
+      ...dbCache.hospitals[index],
+      ...updates,
+      updated_at: new Date().toISOString()
+    };
+    const updated = dbCache.hospitals[index];
+
+    supabase.from('hospitals').update(updates).eq('hospital_id', id).then(({ error }) => {
+      if (error) console.error(`Error updating hospital ${id} on Supabase:`, error);
+    });
+
+    return updated;
+  },
+
+  getHospitalFacilities(id) {
+    return dbCache.hospital_facilities.find(fac => fac.hospital_id === id) || null;
+  },
+
+  updateHospitalFacilities(hospitalId, updates) {
+    const index = dbCache.hospital_facilities.findIndex(fac => fac.hospital_id === hospitalId);
+    if (index === -1) {
+      const newFac = {
+        hospital_id: hospitalId,
+        ...updates
+      };
+      dbCache.hospital_facilities.push(newFac);
+      supabase.from('hospital_facilities').insert([newFac]).then(({ error }) => {
+        if (error) console.error('Error inserting hospital facilities on update:', error);
+      });
+      return newFac;
+    }
+
+    dbCache.hospital_facilities[index] = {
+      ...dbCache.hospital_facilities[index],
+      ...updates
+    };
+    const updated = dbCache.hospital_facilities[index];
+
+    supabase.from('hospital_facilities').update(updates).eq('hospital_id', hospitalId).then(({ error }) => {
+      if (error) console.error('Error updating hospital facilities on Supabase:', error);
+    });
+
+    return updated;
+  },
+
+  getRequestsForHospital(id) {
+    return dbCache.emergency_hospital_requests.filter(req => req.hospital_id === id);
+  },
+
+  getHospitalRequestsForIncident(incidentId) {
+    return dbCache.emergency_hospital_requests.filter(req => req.incident_id === incidentId);
+  },
+
+  getEmergencyHospitalRequest(incidentId, hospitalId) {
+    return dbCache.emergency_hospital_requests.find(req => req.incident_id === incidentId && req.hospital_id === hospitalId) || null;
+  },
+
+  addHospitalRequest(request) {
+    const newRequest = {
+      id: request.id || uuidv4(),
+      status: 'Pending',
+      created_at: new Date().toISOString(),
+      ...request
+    };
+
+    dbCache.emergency_hospital_requests.push(newRequest);
+
+    supabase.from('emergency_hospital_requests').insert([newRequest]).then(({ error }) => {
+      if (error) console.error('Error adding emergency hospital request to Supabase:', error);
+    });
+
+    return newRequest;
+  },
+
+  updateHospitalRequest(id, updates) {
+    const index = dbCache.emergency_hospital_requests.findIndex(req => req.id === id);
+    if (index === -1) return null;
+
+    dbCache.emergency_hospital_requests[index] = {
+      ...dbCache.emergency_hospital_requests[index],
+      ...updates
+    };
+    const updated = dbCache.emergency_hospital_requests[index];
+
+    supabase.from('emergency_hospital_requests').update(updates).eq('id', id).then(({ error }) => {
+      if (error) console.error(`Error updating emergency hospital request ${id} on Supabase:`, error);
+    });
+
+    return updated;
   }
 };
 

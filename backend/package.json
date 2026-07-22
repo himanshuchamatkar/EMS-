@@ -9,9 +9,11 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.2",
+    "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^17.4.2",
     "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.3",
     "socket.io": "^4.7.5",
     "uuid": "^9.0.1"
   },

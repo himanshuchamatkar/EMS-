@@ -85,6 +85,7 @@ const MapController = ({ selectedItem }) => {
 const MapContainer = ({
   ambulances,
   emergencies,
+  hospitals = [],
   mapClickMode, // 'add_ambulance' | 'create_emergency' | 'relocate_ambulance' | null
   onMapClick,
   selectedItem, // { latitude, longitude } to focus on
@@ -141,6 +142,28 @@ const MapContainer = ({
     });
   };
 
+  // Helper to construct custom HTML glowing markers for hospitals
+  const getHospitalIcon = (status) => {
+    const statusColor = status === 'OPEN' ? '#10b981' : '#ef4444';
+    const statusPulse = status === 'OPEN' ? 'rgba(16, 185, 129, 0.4)' : 'rgba(239, 68, 68, 0.4)';
+    return L.divIcon({
+      className: `marker-container marker-hospital status-${status.toLowerCase()}`,
+      html: `
+        <div class="marker-pulse" style="background: ${statusPulse}"></div>
+        <div class="marker-dot" style="background: ${statusColor}"></div>
+        <div style="
+          position: absolute;
+          font-size: 13px;
+          text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+          transform: translateY(-1px);
+        ">🏥</div>
+      `,
+      iconSize: [30, 30],
+      iconAnchor: [15, 15],
+      popupAnchor: [0, -15]
+    });
+  };
+
   // Build route lines for active assignments
   const routeLines = emergencies
     .filter(emp => emp.status === 'Assigned' && emp.assigned_ambulance)
@@ -152,6 +175,22 @@ const MapContainer = ({
         positions: [
           [amb.latitude, amb.longitude],
           [emp.latitude, emp.longitude]
+        ]
+      };
+    })
+    .filter(Boolean);
+
+  // Route from emergency scene to the assigned hospital
+  const hospitalRoutes = emergencies
+    .filter(emp => emp.assigned_hospital_id)
+    .map(emp => {
+      const hosp = (hospitals || []).find(h => h.hospital_id === emp.assigned_hospital_id);
+      if (!hosp) return null;
+      return {
+        id: `hosp-${emp.id}-${hosp.hospital_id}`,
+        positions: [
+          [emp.latitude, emp.longitude],
+          [hosp.latitude, hosp.longitude]
         ]
       };
     })
@@ -203,6 +242,21 @@ const MapContainer = ({
               opacity: 0.8,
               dashArray: '8, 8',
               className: 'leaflet-ant-path' // Hooks into custom CSS animation in index.css
+            }}
+          />
+        ))}
+
+        {/* Draw Hospital Route Lines */}
+        {hospitalRoutes.map(route => (
+          <Polyline
+            key={route.id}
+            positions={route.positions}
+            pathOptions={{
+              color: '#10b981',
+              weight: 3.5,
+              opacity: 0.8,
+              dashArray: '8, 8',
+              className: 'leaflet-ant-path' // Green line for hospital transport leg
             }}
           />
         ))}
@@ -277,6 +331,55 @@ const MapContainer = ({
                 </div>
                 <div className="text-[10px] text-slate-500 font-mono">
                   {emp.latitude.toFixed(5)}, {emp.longitude.toFixed(5)}
+                </div>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
+
+        {/* Render Hospitals */}
+        {(hospitals || []).map(h => (
+          <Marker
+            key={h.hospital_id}
+            position={[h.latitude, h.longitude]}
+            icon={getHospitalIcon(h.emergency_status)}
+            eventHandlers={{
+              click: () => onMarkerClick(h, 'hospital')
+            }}
+          >
+            <Popup>
+              <div className="text-xs space-y-1 font-sans max-w-xs">
+                <div className="flex justify-between items-center gap-2 border-b border-slate-700 pb-1 mb-1">
+                  <span className="font-bold text-slate-200">{h.hospital_name}</span>
+                  <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase ${
+                    h.emergency_status === 'OPEN' ? 'border-brand-green/30 text-brand-green bg-brand-green/5' :
+                    'border-brand-red/30 text-brand-red bg-brand-red/5'
+                  }`}>
+                    {h.emergency_status}
+                  </span>
+                </div>
+                <p className="text-slate-300 font-medium">{h.address}</p>
+                <div style={{ color: '#9ca3af', fontSize: '11px', marginTop: '0.25rem' }}>
+                  Phone: <span className="text-slate-300">{h.phone}</span>
+                </div>
+                {h.facilities && (
+                  <div className="border-t border-slate-800 mt-1 pt-1 space-y-0.5" style={{ fontSize: '10px' }}>
+                    <div style={{ color: '#9ca3af' }}>Capabilities:</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px', marginTop: '2px' }}>
+                      {h.facilities.emergency_24x7 && <span className="bg-blue-950/40 text-blue-400 border border-blue-500/20 px-1 rounded">24x7</span>}
+                      {h.facilities.trauma_facility && <span className="bg-red-950/40 text-red-400 border border-red-500/20 px-1 rounded">Trauma</span>}
+                      {h.facilities.blood_bank && <span className="bg-purple-950/40 text-purple-400 border border-purple-500/20 px-1 rounded">Blood Bank</span>}
+                      {h.facilities.ct_available && <span className="bg-teal-950/40 text-teal-400 border border-teal-500/20 px-1 rounded">CT</span>}
+                      {h.facilities.mri_available && <span className="bg-teal-950/40 text-teal-400 border border-teal-500/20 px-1 rounded">MRI</span>}
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#9ca3af', marginTop: '4px' }}>
+                      <span>Beds (Emerg/ICU):</span>
+                      <span className="font-bold text-slate-200">{h.facilities.emergency_beds} / {h.facilities.icu_count}</span>
+                    </div>
+                  </div>
+                )}
+                <div className="text-[9px] text-slate-500 font-mono mt-1">
+                  {h.latitude.toFixed(5)}, {h.longitude.toFixed(5)}
                 </div>
               </div>
             </Popup>
