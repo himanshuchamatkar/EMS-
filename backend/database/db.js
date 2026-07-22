@@ -42,7 +42,11 @@ async function loadCache() {
     if (err6) console.error('Error loading emergency hospital requests from Supabase:', err6);
 
     dbCache.ambulances = ambulances || [];
-    dbCache.emergencies = emergencies || [];
+    dbCache.emergencies = (emergencies || []).map(emp => ({
+      ...emp,
+      offered_to: emp.offered_to || [],
+      rejected_by: emp.rejected_by || []
+    }));
     dbCache.dispatch_logs = logs || [];
     dbCache.hospitals = hospitals || [];
     dbCache.hospital_facilities = facilities || [];
@@ -350,7 +354,6 @@ const db = {
     // Async write to Supabase in the background
     supabase.from('emergencies').insert([persistedEmergency]).then(({ error }) => {
       if (error) console.error('Error adding emergency to Supabase:', error);
-      db.syncEmergenciesFromSupabase();
     });
 
     return newEmergency;
