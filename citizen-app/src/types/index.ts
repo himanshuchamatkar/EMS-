@@ -44,6 +44,7 @@ export interface CreateEmergencyPayload {
   video_url?: string | null;
   audio_url?: string | null;
   report_source: 'citizen';
+  ignoreDuplicate?: boolean;
 }
 
 /** Minimal shape read off dispatch:assigned's `ambulance` payload — see backend/database/db.js. */

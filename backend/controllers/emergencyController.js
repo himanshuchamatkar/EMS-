@@ -73,10 +73,44 @@ exports.getEmergencyById = (req, res) => {
 
 exports.createEmergency = (req, res) => {
   try {
-    const { latitude, longitude, priority, description, photo_url, video_url, audio_url, report_source } = req.body;
+    const { latitude, longitude, priority, description, photo_url, video_url, audio_url, report_source, ignoreDuplicate } = req.body;
 
     if (latitude === undefined || longitude === undefined || !priority) {
       return res.status(400).json({ error: 'Missing required fields: latitude, longitude, priority' });
+    }
+
+    // Check for nearby duplicate incidents (within 100m, reported in the last 30 minutes, not resolved)
+    if (!ignoreDuplicate) {
+      const activeEmergencies = db.getEmergencies();
+      const duplicate = activeEmergencies.find(e => {
+        if (e.status === 'Resolved') return false;
+
+        // Check if reported in the last 30 minutes
+        const diffMs = new Date() - new Date(e.created_at);
+        if (diffMs > 30 * 60 * 1000) return false;
+
+        // Check distance (distance <= 0.1 km / 100m)
+        const dist = calculateDistance(
+          Number(latitude),
+          Number(longitude),
+          e.latitude,
+          e.longitude
+        );
+        return dist <= 0.1;
+      });
+
+      if (duplicate) {
+        return res.status(200).json({
+          duplicate: true,
+          message: 'A similar incident was recently reported nearby.',
+          existingIncident: {
+            id: duplicate.id,
+            photo_url: duplicate.photo_url,
+            description: duplicate.description,
+            created_at: duplicate.created_at
+          }
+        });
+      }
     }
 
     // report_source distinguishes citizen-app reports from admin-panel-created

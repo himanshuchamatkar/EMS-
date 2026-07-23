@@ -24,9 +24,16 @@ interface StatusResponse {
 
 interface CreateEmergencyResponse {
   message: string;
-  emergency: Emergency;
+  emergency?: Emergency;
   offered_to_ambulances?: unknown[];
   assigned_ambulance?: unknown;
+  duplicate?: boolean;
+  existingIncident?: {
+    id: string;
+    photo_url: string | null;
+    description: string;
+    created_at: string;
+  };
 }
 
 export const api = {

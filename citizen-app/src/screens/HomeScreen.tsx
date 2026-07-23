@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, ScrollView, StyleSheet, Alert, Linking } from 'react-native';
+import { View, ScrollView, StyleSheet, Alert, Linking, Modal, Text, Image, TouchableOpacity } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Audio } from 'expo-av';
 import { useAppTheme } from '../hooks/useAppTheme';
@@ -45,6 +45,15 @@ export default function HomeScreen() {
   const recordingRef = useRef<Audio.Recording | null>(null);
   const lastAmbulanceIdRef = useRef<string | null>(null);
   const lastStatusRef = useRef<string | null>(null);
+
+  // Duplicate Check Modal State
+  const [duplicateModalVisible, setDuplicateModalVisible] = useState(false);
+  const [existingIncident, setExistingIncident] = useState<{
+    id: string;
+    photo_url: string | null;
+    description: string;
+  } | null>(null);
+  const [pendingPayload, setPendingPayload] = useState<any | null>(null);
 
   const tracking = useIncidentTracking(activeEmergencyId);
 
@@ -148,6 +157,39 @@ export default function HomeScreen() {
     }
   };
 
+  const handleConfirmSameIncident = () => {
+    setDuplicateModalVisible(false);
+    setMedia(EMPTY_MEDIA);
+    setPendingPayload(null);
+    setExistingIncident(null);
+    Alert.alert('Report Cancelled', 'Thank you! The existing report is already being handled.');
+  };
+
+  const handleConfirmDifferentIncident = async () => {
+    if (!pendingPayload) return;
+    setDuplicateModalVisible(false);
+    setSubmitting(true);
+
+    try {
+      const response = await api.createEmergency({
+        ...pendingPayload,
+        ignoreDuplicate: true,
+      });
+
+      if (response.emergency) {
+        setActiveEmergencyId(response.emergency.id);
+        setMedia(EMPTY_MEDIA);
+        Alert.alert('Report Submitted', 'Dispatch has received your report and is finding the nearest ambulance.');
+      }
+    } catch (err) {
+      Alert.alert('Could not submit report', err instanceof Error ? err.message : 'Please try again.');
+    } finally {
+      setSubmitting(false);
+      setPendingPayload(null);
+      setExistingIncident(null);
+    }
+  };
+
   const handleUpload = async () => {
     if (!uploadEnabled) return;
 
@@ -164,23 +206,34 @@ export default function HomeScreen() {
         media.audio ? uploadToCloudinary(media.audio.localUri, 'video') : Promise.resolve(null),
       ]);
 
-      const response = await api.createEmergency({
+      const payload = {
         latitude: location.latitude,
         longitude: location.longitude,
-        priority: 'Critical',
+        priority: 'Critical' as const,
         description: describeAttachments(media),
         photo_url: photoUrl,
         video_url: videoUrl,
         audio_url: audioUrl,
-        report_source: 'citizen',
-      });
+        report_source: 'citizen' as const,
+      };
 
-      setActiveEmergencyId(response.emergency.id);
-      setMedia(EMPTY_MEDIA);
-      Alert.alert('Report Submitted', 'Dispatch has received your report and is finding the nearest ambulance.');
+      const response = await api.createEmergency(payload);
+
+      if (response.duplicate) {
+        setPendingPayload(payload);
+        setExistingIncident(response.existingIncident || null);
+        setDuplicateModalVisible(true);
+        setSubmitting(false);
+        return;
+      }
+
+      if (response.emergency) {
+        setActiveEmergencyId(response.emergency.id);
+        setMedia(EMPTY_MEDIA);
+        Alert.alert('Report Submitted', 'Dispatch has received your report and is finding the nearest ambulance.');
+      }
     } catch (err) {
       Alert.alert('Could not submit report', err instanceof Error ? err.message : 'Please try again.');
-    } finally {
       setSubmitting(false);
     }
   };
@@ -225,6 +278,61 @@ export default function HomeScreen() {
           body="Reporting false incidents is a punishable offense. Use this app only for genuine emergencies."
         />
       </ScrollView>
+
+      {/* Duplicate Incident Modal */}
+      <Modal
+        visible={duplicateModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setDuplicateModalVisible(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={[styles.modalCard, { backgroundColor: theme.colors.surface || '#12161F' }]}>
+            <Text style={[styles.modalTitle, { color: theme.colors.onSurface || '#F5F7FA' }]}>
+              Emergency Nearby
+            </Text>
+            
+            <Text style={[styles.modalSubtitle, { color: theme.colors.onSurfaceVariant || '#8B96AB' }]}>
+              A similar incident was reported nearby in the last 30 minutes. Is this the same incident?
+            </Text>
+
+            {existingIncident?.photo_url ? (
+              <Image
+                source={{ uri: existingIncident.photo_url }}
+                style={styles.modalImage}
+                resizeMode="cover"
+              />
+            ) : (
+              <View style={styles.modalImagePlaceholder}>
+                <Text style={styles.modalPlaceholderText}>No Photo Attached</Text>
+              </View>
+            )}
+
+            <View style={styles.descriptionBox}>
+              <Text style={styles.descriptionLabel}>Details Reported:</Text>
+              <Text style={styles.descriptionText} numberOfLines={3}>
+                {existingIncident?.description || 'Emergency incident reported.'}
+              </Text>
+            </View>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.btnConfirmSame]}
+                onPress={handleConfirmSameIncident}
+              >
+                <Text style={styles.btnText}>Yes, Same Incident</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalButton, styles.btnConfirmDifferent]}
+                onPress={handleConfirmDifferentIncident}
+              >
+                <Text style={styles.btnText}>No, New Incident</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -233,4 +341,100 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   scroll: { padding: 20, gap: 22, paddingBottom: 32 },
   mediaRow: { flexDirection: 'row', gap: 16, paddingHorizontal: 8 },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 340,
+    borderRadius: 16,
+    padding: 20,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  modalSubtitle: {
+    fontSize: 13,
+    textAlign: 'center',
+    lineHeight: 18,
+    marginBottom: 16,
+  },
+  modalImage: {
+    width: '100%',
+    height: 180,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  modalImagePlaceholder: {
+    width: '100%',
+    height: 120,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  modalPlaceholderText: {
+    color: '#64748B',
+    fontSize: 12,
+  },
+  descriptionBox: {
+    width: '100%',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 20,
+  },
+  descriptionLabel: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#64748B',
+    textTransform: 'uppercase',
+    marginBottom: 4,
+  },
+  descriptionText: {
+    fontSize: 12,
+    color: '#E2E8F0',
+    lineHeight: 16,
+  },
+  modalActions: {
+    width: '100%',
+    flexDirection: 'column',
+    gap: 10,
+  },
+  modalButton: {
+    width: '100%',
+    padding: 12,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  btnConfirmSame: {
+    backgroundColor: '#10B981',
+  },
+  btnConfirmDifferent: {
+    backgroundColor: '#EF4444',
+  },
+  btnText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
 });
