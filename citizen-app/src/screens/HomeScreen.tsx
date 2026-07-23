@@ -293,7 +293,7 @@ export default function HomeScreen() {
             </Text>
             
             <Text style={[styles.modalSubtitle, { color: theme.colors.onSurfaceVariant || '#8B96AB' }]}>
-              A similar incident was reported nearby in the last 30 minutes. Is this the same incident?
+              A similar incident was reported nearby in the last 5 minutes. Is this the same incident?
             </Text>
 
             {existingIncident?.photo_url ? (

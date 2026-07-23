@@ -9,7 +9,10 @@
       "apiBaseUrl": "https://smart-ambulance-api-5ui6.onrender.com/api",
       "socketUrl": "https://smart-ambulance-api-5ui6.onrender.com",
       "cloudinaryCloudName": "dibt1wwpz",
-      "cloudinaryUploadPreset": "citizen_app_unsigned"
+      "cloudinaryUploadPreset": "citizen_app_unsigned",
+      "eas": {
+        "projectId": "3cb2e036-d55e-4d37-834c-b33acab6fe0b"
+      }
     },
     "ios": {
       "supportsTablet": true,
@@ -49,6 +52,7 @@
           "microphonePermission": "Smart EMS needs microphone access to include audio when you attach a video."
         }
       ]
-    ]
+    ],
+    "owner": "himanshuchamatkar123456"
   }
 }

@@ -79,15 +79,15 @@ exports.createEmergency = (req, res) => {
       return res.status(400).json({ error: 'Missing required fields: latitude, longitude, priority' });
     }
 
-    // Check for nearby duplicate incidents (within 100m, reported in the last 30 minutes, not resolved)
+    // Check for nearby duplicate incidents (within 100m, reported in the last 5 minutes, not resolved)
     if (!ignoreDuplicate) {
       const activeEmergencies = db.getEmergencies();
       const duplicate = activeEmergencies.find(e => {
         if (e.status === 'Resolved') return false;
 
-        // Check if reported in the last 30 minutes
+        // Check if reported in the last 5 minutes
         const diffMs = new Date() - new Date(e.created_at);
-        if (diffMs > 30 * 60 * 1000) return false;
+        if (diffMs > 5 * 60 * 1000) return false;
 
         // Check distance (distance <= 0.1 km / 100m)
         const dist = calculateDistance(
