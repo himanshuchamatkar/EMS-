@@ -1,0 +1,72 @@
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  --bg-main: #f8fafc;         /* Slate 50 */
+  --bg-card: #ffffff;         /* Pure white */
+  --bg-console: #f1f5f9;      /* Slate 100 */
+  --bg-active-tab: #f0fdf4;   /* Green 50 (light green alert) */
+  
+  --border-color: #cbd5e1;    /* Slate 300 */
+  --border-terminal: #86efac; /* Green 300 */
+  --border-focus: #16a34a;    /* Green 600 */
+  
+  --accent-teal: #0f766e;     /* Teal 700 */
+  --accent-green: #15803d;    /* Green 700 */
+  --accent-red: #b91c1c;      /* Red 700 */
+  --accent-orange: #c2410c;   /* Orange 700 */
+  
+  --text-main: #0f172a;       /* Slate 900 */
+  --text-muted: #475569;      /* Slate 600 */
+  --text-console: #0f172a;    /* Slate 900 */
+  --text-green: #16a34a;      /* Green 600 */
+  
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  --font-sans: 'Outfit', sans-serif;
+  
+  --grid-line: rgba(22, 163, 74, 0.04);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  height: 100vh;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-image: linear-gradient(var(--grid-line) 1px, transparent 1px),
+                    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+#root {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-console);
+  border-left: 1px solid var(--border-color);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-focus);
+}
