@@ -485,3 +485,49 @@
   0%, 100% { opacity: 0.6; transform: scale(1); }
   50% { opacity: 0.9; transform: scale(1.03); }
 }
+
+/* Incident Filter Dropdown Styles */
+.filter-container {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--bg-console);
+}
+
+.terminal-select {
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  border-radius: 4px;
+  outline: none;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+
+.terminal-select:focus {
+  border-color: var(--border-focus);
+}
+
+/* Link Actions (GPS Open in Google Maps) */
+.inline-icon {
+  margin-left: 5px;
+  vertical-align: middle;
+  display: inline-block;
+}
+
+.link-action {
+  color: var(--accent-teal) !important;
+  text-decoration: none;
+  border-bottom: 1px dashed var(--accent-teal);
+  transition: all 0.15s ease-in-out;
+}
+
+.link-action:hover {
+  color: var(--border-focus) !important;
+  border-bottom-style: solid;
+  border-bottom-color: var(--border-focus);
+}

@@ -27,6 +27,7 @@ export default function App() {
   const [selectedEmergencyId, setSelectedEmergencyId] = useState(null);
   const [logs, setLogs] = useState({}); // Logs categorized by emergency ID: { [emergencyId]: [ { time, text, type } ] }
   const [sysTime, setSysTime] = useState(new Date().toLocaleTimeString());
+  const [timeFilter, setTimeFilter] = useState('unresolved');
 
   // Ref to help retrieve correct states inside event callbacks
   const emergenciesRef = useRef([]);
@@ -229,6 +230,41 @@ export default function App() {
     };
   }, [ambulances]);
 
+  // Filter logic
+  const filteredEmergencies = emergencies.filter(e => {
+    if (!e.created_at) return true;
+    const incidentDate = new Date(e.created_at);
+    const now = new Date();
+    const diffMs = now - incidentDate;
+    
+    switch (timeFilter) {
+      case 'unresolved':
+        return e.status !== 'Resolved';
+      case 'today':
+        return incidentDate.toDateString() === now.toDateString();
+      case 'week':
+        return diffMs <= 7 * 24 * 60 * 60 * 1000;
+      case 'month':
+        return diffMs <= 30 * 24 * 60 * 60 * 1000;
+      case 'year':
+        return diffMs <= 365 * 24 * 60 * 60 * 1000;
+      case 'all':
+      default:
+        return true;
+    }
+  });
+
+  // Auto select first filtered incident on filter change or startup
+  useEffect(() => {
+    if (filteredEmergencies.length > 0) {
+      if (!selectedEmergencyId || !filteredEmergencies.some(e => e.id === selectedEmergencyId)) {
+        setSelectedEmergencyId(filteredEmergencies[0].id);
+      }
+    } else {
+      setSelectedEmergencyId(null);
+    }
+  }, [timeFilter, emergencies]);
+
   // Resolve current active incident details
   const activeIncident = emergencies.find((e) => e.id === selectedEmergencyId) || null;
   const activeIncidentLogs = activeIncident ? logs[activeIncident.id] || [] : [];
@@ -267,11 +303,25 @@ export default function App() {
         {/* Left Tabs Sidebar */}
         <aside className="incident-tabs-container">
           <div className="sidebar-label">Incident Terminals</div>
+          <div className="filter-container">
+            <select
+              value={timeFilter}
+              onChange={(e) => setTimeFilter(e.target.value)}
+              className="terminal-select"
+            >
+              <option value="unresolved">Unresolved Incidents</option>
+              <option value="today">Today's Incidents</option>
+              <option value="week">Last Week</option>
+              <option value="month">Last Month</option>
+              <option value="year">Last Year</option>
+              <option value="all">All Incidents</option>
+            </select>
+          </div>
           <div className="tabs-list">
-            {emergencies.length === 0 ? (
-              <div className="no-incidents-msg">No active incidents reported.</div>
+            {filteredEmergencies.length === 0 ? (
+              <div className="no-incidents-msg">No matching incidents.</div>
             ) : (
-              emergencies.map((e) => {
+              filteredEmergencies.map((e) => {
                 const isActive = e.id === selectedEmergencyId;
                 const dateObj = new Date(e.created_at || Date.now());
                 const formattedTime = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -410,7 +460,16 @@ export default function App() {
 
                   <div className="meta-item">
                     <span className="meta-label">GPS Coordinate Position</span>
-                    <span className="meta-value mono">{activeIncident.latitude.toFixed(6)}, {activeIncident.longitude.toFixed(6)}</span>
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${activeIncident.latitude},${activeIncident.longitude}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="meta-value mono link-action"
+                      title="Open in Google Maps"
+                    >
+                      {activeIncident.latitude.toFixed(6)}, {activeIncident.longitude.toFixed(6)}
+                      <ExternalLink size={12} className="inline-icon" />
+                    </a>
                   </div>
 
                   <div className="meta-item">
