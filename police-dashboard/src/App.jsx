@@ -28,6 +28,7 @@ export default function App() {
   const [logs, setLogs] = useState({}); // Logs categorized by emergency ID: { [emergencyId]: [ { time, text, type } ] }
   const [sysTime, setSysTime] = useState(new Date().toLocaleTimeString());
   const [timeFilter, setTimeFilter] = useState('unresolved');
+  const [modalImageSrc, setModalImageSrc] = useState(null);
 
   // Ref to help retrieve correct states inside event callbacks
   const emergenciesRef = useRef([]);
@@ -505,10 +506,22 @@ export default function App() {
                     {activeIncident.photo_url && (
                       <div className="media-card">
                         <span className="meta-label" style={{ fontSize: '9px', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
-                          <Camera size={10} /> Photo
+                          <Camera size={10} /> Photo (Click to zoom)
                         </span>
-                        <img src={activeIncident.photo_url} className="attachment-img" alt="Incident Capture" />
-                        <a href={activeIncident.photo_url} target="_blank" rel="noreferrer" className="media-btn">Open Link</a>
+                        <img 
+                          src={activeIncident.photo_url} 
+                          className="attachment-img" 
+                          alt="Incident Capture" 
+                          onClick={() => setModalImageSrc(activeIncident.photo_url)}
+                          title="Click to view full image"
+                        />
+                        <button 
+                          onClick={() => setModalImageSrc(activeIncident.photo_url)} 
+                          className="media-btn"
+                          style={{ width: '100%' }}
+                        >
+                          Zoom Image
+                        </button>
                       </div>
                     )}
 
@@ -566,6 +579,18 @@ export default function App() {
         </main>
 
       </div>
+
+      {/* Full screen image view modal */}
+      {modalImageSrc && (
+        <div className="fullscreen-image-overlay" onClick={() => setModalImageSrc(null)}>
+          <div className="fullscreen-modal-card" onClick={(e) => e.stopPropagation()}>
+            <img src={modalImageSrc} className="fullscreen-img" alt="Citizen Attachment" />
+            <button className="media-btn" style={{ padding: '0.4rem 1.5rem', width: '100%', marginTop: '0.5rem' }} onClick={() => setModalImageSrc(null)}>
+              Close Terminal Preview
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

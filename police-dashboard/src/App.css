@@ -316,7 +316,7 @@
   border: 1px solid var(--border-color);
   border-radius: 4px;
   overflow: hidden;
-  width: 140px;
+  width: 220px;
   background-color: var(--bg-console);
   display: flex;
   flex-direction: column;
@@ -326,14 +326,20 @@
 
 .attachment-img {
   width: 100%;
-  height: 90px;
+  height: 140px;
   object-fit: cover;
   border-radius: 2px;
+  cursor: pointer;
+  transition: transform 0.15s ease-in-out;
+}
+
+.attachment-img:hover {
+  transform: scale(1.02);
 }
 
 .media-fallback {
   width: 100%;
-  height: 90px;
+  height: 140px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -447,7 +453,8 @@
   border-radius: 4px;
   padding: 1.25rem;
   font-family: var(--font-mono);
-  max-height: 220px;
+  min-height: 250px;
+  max-height: 450px;
   overflow-y: auto;
   box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);
 }
@@ -530,4 +537,47 @@
   color: var(--border-focus) !important;
   border-bottom-style: solid;
   border-bottom-color: var(--border-focus);
+}
+
+/* Fullscreen Image Overlay Modal */
+.fullscreen-image-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(15, 23, 42, 0.85); /* Dark transparent backdrop */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  cursor: zoom-out;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.fullscreen-modal-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  background-color: var(--bg-card);
+  padding: 1rem;
+  border-radius: 6px;
+  border: 2px solid var(--border-focus);
+  max-width: 90%;
+  max-height: 90%;
+  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3);
+}
+
+.fullscreen-img {
+  max-width: 100%;
+  max-height: 75vh;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
