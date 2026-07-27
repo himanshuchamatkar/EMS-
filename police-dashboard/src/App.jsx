@@ -291,6 +291,15 @@ export default function App() {
   const activeIncident = emergencies.find((e) => e.id === selectedEmergencyId) || null;
   const activeIncidentLogs = activeIncident ? logs[activeIncident.id] || [] : [];
   
+  const logEndRef = useRef(null);
+
+  // Auto scroll logs when active logs change
+  useEffect(() => {
+    if (logEndRef.current) {
+      logEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [activeIncidentLogs]);
+  
   // Find assigned ambulance details
   const assignedAmbulance = activeIncident
     ? ambulances.find((a) => a.id === activeIncident.assigned_ambulance)
@@ -620,6 +629,7 @@ export default function App() {
                       </div>
                     ))
                   )}
+                  <div ref={logEndRef} />
                 </div>
               </div>
 

@@ -90,6 +90,7 @@
   flex: 1;
   gap: 1.25rem;
   overflow: hidden;
+  min-height: 0;
 }
 
 /* Left Tabs Column */
@@ -220,6 +221,7 @@
   flex-direction: column;
   overflow: hidden;
   box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  min-height: 0;
 }
 
 .console-workspace-empty {
@@ -392,7 +394,7 @@
   flex: 1;
   height: 2px;
   background-color: var(--border-color);
-  margin-bottom: 1.5rem; /* Align with indicators center vertical */
+  transform: translateY(-16px); /* Align with indicators center vertical */
 }
 
 .stage-connector.active {
@@ -447,14 +449,12 @@
   margin-top: 0.1rem;
 }
 
-/* Hacker Log Console Terminal */
 .console-log-box {
   background-color: #0f172a; /* Slate 900 for dark console logs look */
   border-radius: 4px;
   padding: 1.25rem;
   font-family: var(--font-mono);
-  min-height: 250px;
-  max-height: 450px;
+  height: 180px; /* Comfortably fits logs without stretching workspace */
   overflow-y: auto;
   box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);
 }
