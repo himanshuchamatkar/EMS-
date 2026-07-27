@@ -97,11 +97,19 @@ export function ActiveIncidentProvider({ children }: { children: ReactNode }) {
       );
     };
 
+    const handleEmergencyUpdated = (updated: Emergency) => {
+      if (emergencyRef.current?.id === updated.id) {
+        setEmergency(updated);
+      }
+    };
+
     socket.on('dispatch:cancelled', handleCancelled);
     socket.on('emergency:hospital_assigned', handleHospitalAssigned);
+    socket.on('emergency:updated', handleEmergencyUpdated);
     return () => {
       socket.off('dispatch:cancelled', handleCancelled);
       socket.off('emergency:hospital_assigned', handleHospitalAssigned);
+      socket.off('emergency:updated', handleEmergencyUpdated);
     };
   }, [socket]);
 

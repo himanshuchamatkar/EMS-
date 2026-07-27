@@ -7,5 +7,6 @@ router.get('/:id', emergencyController.getEmergencyById);
 router.post('/', emergencyController.createEmergency);
 router.delete('/', emergencyController.deleteAllEmergencies);
 router.delete('/:id', emergencyController.deleteEmergency);
+router.post('/:id/police-seen', emergencyController.markPoliceSeen);
 
 module.exports = router;

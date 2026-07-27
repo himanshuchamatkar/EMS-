@@ -195,6 +195,15 @@ export default function MapScreen() {
         </TouchableOpacity>
       )}
 
+      {emergency && emergency.police_seen && (
+        <View style={{ backgroundColor: '#DBEAFE', borderBottomWidth: 1, borderBottomColor: '#BFDBFE', paddingVertical: 10, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Feather name="shield" size={15} color="#2563EB" />
+          <Text style={{ color: '#1E40AF', fontSize: 11.5, fontWeight: '700', flex: 1 }}>
+            Police Alert: Police are informed and in action at the scene.
+          </Text>
+        </View>
+      )}
+
       {emergency && !emergency.assigned_hospital_id && (
         <View style={{ backgroundColor: '#FEF3C7', borderBottomWidth: 1, borderBottomColor: '#FDE68A', paddingVertical: 10, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <Feather name="alert-triangle" size={15} color="#D97706" />

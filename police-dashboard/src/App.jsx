@@ -179,6 +179,16 @@ export default function App() {
 
     // Real-time emergency update handler
     socketInstance.on('emergency:updated', (updatedEmergency) => {
+      // Check if we transitioned to police_seen: true
+      const oldEmp = emergenciesRef.current.find(e => e.id === updatedEmergency.id);
+      if (updatedEmergency.police_seen && (!oldEmp || !oldEmp.police_seen)) {
+        addIncidentLog(
+          updatedEmergency.id,
+          `👮 POLICE ACTIVE: Incident marked as seen. Response team alert established.`,
+          'system'
+        );
+      }
+
       setEmergencies((prev) =>
         prev.map((emp) => (emp.id === updatedEmergency.id ? { ...emp, ...updatedEmergency } : emp))
       );
@@ -230,6 +240,17 @@ export default function App() {
       socketInstance.disconnect();
     };
   }, [ambulances]);
+
+  const handleMarkSeen = (emergencyId) => {
+    if (socket) {
+      socket.emit('emergency:police-seen', { emergency_id: emergencyId });
+      addIncidentLog(
+        emergencyId,
+        "👮 POLICE ACTION: Incident marked as seen. Alert broadcast to all dashboards and responders.",
+        "system"
+      );
+    }
+  };
 
   // Filter logic
   const filteredEmergencies = emergencies.filter(e => {
@@ -365,9 +386,36 @@ export default function App() {
                 </p>
               </div>
             </div>
-          ) : (
-            <div className="console-body">
+             <div className="console-body">
               
+              {/* Police Action Bar */}
+              <div className="section-card police-action-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.2)', marginBottom: '1rem', borderRadius: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                  <Shield size={22} className={activeIncident.police_seen ? "" : "animate-pulse"} style={{ color: activeIncident.police_seen ? '#10b981' : '#3b82f6' }} />
+                  <div>
+                    <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#f8fafc' }}>
+                      {activeIncident.police_seen ? '👮 INCIDENT ACKNOWLEDGED BY POLICE' : '🚨 ACTION REQUIRED: MONITOR INCIDENT'}
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '0.2rem' }}>
+                      {activeIncident.police_seen 
+                        ? 'Your department has acknowledged this case. Dispatch and responder teams are alert.' 
+                        : 'Signal all response networks and drivers that Police department is informed & active.'}
+                    </div>
+                  </div>
+                </div>
+                {!activeIncident.police_seen && (
+                  <button 
+                    className="btn-mark-seen" 
+                    style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold', letterSpacing: '0.05em', textTransform: 'uppercase', transition: 'background 0.2s' }}
+                    onClick={() => handleMarkSeen(activeIncident.id)}
+                    onMouseOver={(e) => e.currentTarget.style.background = '#2563eb'}
+                    onMouseOut={(e) => e.currentTarget.style.background = '#3b82f6'}
+                  >
+                    Mark As Seen
+                  </button>
+                )}
+              </div>
+
               {/* Proximity & Stage Progress Flow */}
               <div className="section-card">
                 <div className="section-title-bar">

@@ -834,7 +834,14 @@ export default function App() {
                       <div style={{ marginTop: '1rem', background: 'rgba(255,255,255,0.02)', padding: '0.75rem', borderRadius: '4px', border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div>
                           <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>ACTIVE INCIDENT CASE</div>
-                          <div style={{ fontSize: '13px', fontWeight: 'bold' }}>{currentActiveIncident.description}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: '13px', fontWeight: 'bold' }}>{currentActiveIncident.description}</span>
+                            {currentActiveIncident.police_seen && (
+                              <span style={{ fontSize: '9px', fontWeight: 'bold', padding: '2px 6px', borderRadius: '3px', background: 'rgba(59, 130, 246, 0.1)', color: 'var(--color-blue)', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                                👮 Police Active
+                              </span>
+                            )}
+                          </div>
                         </div>
                         <div style={{ textTransform: 'uppercase', fontSize: '10px', fontWeight: 'bold', padding: '4px 8px', borderRadius: '4px', border: '1px solid rgba(239, 68, 68, 0.3)', color: 'var(--color-red)', background: 'rgba(239, 68, 68, 0.05)' }}>
                           {currentActiveIncident.priority}
@@ -1144,6 +1151,11 @@ export default function App() {
                           <td>
                             <div style={{ fontWeight: 'bold' }}>{r.emergency.description}</div>
                             <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>ID: {r.emergency.id.substring(0, 8)}...</div>
+                            {r.emergency.police_seen && (
+                              <span style={{ fontSize: '9px', fontWeight: 'bold', padding: '2px 6px', borderRadius: '3px', background: 'rgba(59, 130, 246, 0.1)', color: 'var(--color-blue)', border: '1px solid rgba(59, 130, 246, 0.2)', display: 'inline-block', marginTop: '4px' }}>
+                                👮 Police Active
+                              </span>
+                            )}
                           </td>
                           <td>{new Date(r.created_at).toLocaleString()}</td>
                           <td>
@@ -1217,8 +1229,15 @@ export default function App() {
                     <ShieldAlert className="alert-pulse-icon" style={{ color: '#fff' }} />
                     NEW EMERGENCY REQUEST
                   </h3>
-                  <div style={{ background: 'rgba(0,0,0,0.2)', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold' }}>
-                    PRIORITY: {incomingAlert.emergency.priority.toUpperCase()}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-end' }}>
+                    <div style={{ background: 'rgba(0,0,0,0.2)', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold' }}>
+                      PRIORITY: {incomingAlert.emergency.priority.toUpperCase()}
+                    </div>
+                    {incomingAlert.emergency.police_seen && (
+                      <div style={{ background: 'rgba(59, 130, 246, 0.4)', border: '1px solid rgba(59, 130, 246, 0.6)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold', color: '#fff', display: 'flex', alignItems: 'center', gap: '2px' }}>
+                        👮 POLICE ACTIVE
+                      </div>
+                    )}
                   </div>
                 </div>
                 

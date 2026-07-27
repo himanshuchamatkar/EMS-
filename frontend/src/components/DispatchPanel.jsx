@@ -201,8 +201,13 @@ const DispatchPanel = ({
                 )}
               </div>
 
-              <h4 className="text-sm font-semibold text-slate-100 mt-1">
+              <h4 className="text-sm font-semibold text-slate-100 mt-1 flex items-center gap-2 flex-wrap">
                 {selectedEmergency.description}
+                {selectedEmergency.police_seen && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 bg-blue-500/15 text-blue-300 border border-blue-500/30 rounded uppercase">
+                    👮 Police Alerted
+                  </span>
+                )}
               </h4>
             </div>
           </div>

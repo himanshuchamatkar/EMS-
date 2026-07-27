@@ -249,3 +249,34 @@ exports.deleteAllEmergencies = (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+exports.markPoliceSeen = (req, res) => {
+  try {
+    const { id } = req.params;
+    const emergency = db.getEmergencyById(id);
+    if (!emergency) {
+      return res.status(404).json({ error: 'Emergency not found' });
+    }
+
+    const updatedEmergency = db.updateEmergency(id, {
+      police_seen: true
+    });
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('emergency:updated', updatedEmergency);
+      io.emit('emergencies:list', db.getEmergencies());
+      
+      if (updatedEmergency.assigned_ambulance) {
+        io.to(`ambulance:${updatedEmergency.assigned_ambulance}`).emit('emergency:updated', updatedEmergency);
+      }
+    }
+
+    res.json({
+      message: 'Incident marked as seen by police',
+      emergency: updatedEmergency
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};

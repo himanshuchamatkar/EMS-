@@ -48,6 +48,28 @@ function registerSocketHandlers(io) {
       console.log(`Hospital registered: socket ${socket.id} -> hospital ${hospital_id}`);
     });
  
+    // Handle police marking incident as seen/acknowledged
+    socket.on('emergency:police-seen', ({ emergency_id } = {}) => {
+      if (!emergency_id) return;
+      try {
+        console.log(`Incident marked as seen by police: ${emergency_id}`);
+        const updatedEmergency = db.updateEmergency(emergency_id, {
+          police_seen: true
+        });
+
+        // Broadcast updated lists and detail changes to all connected clients
+        io.emit('emergency:updated', updatedEmergency);
+        io.emit('emergencies:list', db.getEmergencies());
+        
+        // Also target the assigned ambulance driver room to alert them directly
+        if (updatedEmergency.assigned_ambulance) {
+          io.to(`ambulance:${updatedEmergency.assigned_ambulance}`).emit('emergency:updated', updatedEmergency);
+        }
+      } catch (err) {
+        console.error('Failed to update police_seen status:', err);
+      }
+    });
+
     socket.on('disconnect', () => {
       console.log(`Client disconnected: ${socket.id}`);
     });

@@ -279,13 +279,18 @@ const Sidebar = ({
                         : 'bg-slate-900/40 border-dark-border hover:bg-slate-800/30'
                     }`}
                   >
-                    <div className="flex justify-between items-start mb-2 gap-2">
+                    <div className="flex flex-wrap gap-1 mb-2">
                       <span className={`text-[9px] font-bold px-2 py-0.5 rounded border uppercase ${getPriorityColor(emp.priority)}`}>
                         {emp.priority}
                       </span>
                       <span className={`text-[9px] font-bold px-2 py-0.5 rounded border uppercase ${getEmergencyStatusColor(emp.status)}`}>
                         {emp.status}
                       </span>
+                      {emp.police_seen && (
+                        <span className="text-[9px] font-bold px-2 py-0.5 rounded border bg-blue-500/20 text-blue-300 border-blue-500/30 uppercase">
+                          👮 Police Alerted
+                        </span>
+                      )}
                     </div>
 
                     <p className="text-xs text-slate-300 line-clamp-2 mb-2 font-medium">
