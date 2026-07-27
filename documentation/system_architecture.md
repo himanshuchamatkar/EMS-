@@ -16,53 +16,49 @@ graph TB
     classDef storage fill:#fff7ed,stroke:#ea580c,stroke-width:2px,color:#7c2d12;
     classDef thirdparty fill:#faf5ff,stroke:#9333ea,stroke-width:2px,color:#581c87;
 
-    %% Client Layer (Dashboards & Apps)
-    subgraph Clients ["Client Terminals & Mobile Applications"]
-        CRD["Control Room Dashboard<br>(Vercel - React/Tailwind)<br>• Operator Console<br>• Incident Dispatch Management"]:::client
-        HOD["Hospital Dashboard<br>(Vercel - React/CSS Light)<br>• Capacity/Staff Updates<br>• Patient Acceptance Overlays"]:::client
-        POD["Police Dashboard<br>(Vercel - React/CSS Dark)<br>• Incident Monitor Log<br>• 'Mark Seen' Acknowledge Button"]:::client
-        DRV["Driver Mobile App<br>(React Native / Expo APK)<br>• GPS Location Reporting<br>• Proximity Alert & Actions"]:::client
-        CIT["Citizen Report App<br>(React Native / Expo)<br>• SOS Emergency Reporter<br>• Media Capture (Photo/Audio)"]:::client
-    end
+    %% Level 1: Input / Reporting Sources (Top)
+    CIT["Citizen Mobile App (Expo)<br>• Report SOS Emergencies<br>• Capture & Attach Media"]:::client
+    CLD["Cloudinary Media Store<br>• Host Incident Images/Audio<br>• Return Public CDN URLs"]:::thirdparty
 
-    %% Backend Layer (API & Real-time Server)
-    subgraph Server ["Backend Infrastructure (Render Node.js)"]
-        API["Express.js HTTP Server<br>• REST Endpoints<br>• Authentication Middleware"]:::backend
-        SIO["Socket.IO Server<br>• Bidirectional WebSockets<br>• Target Rooms (ambulance:id)"]:::backend
-        ENG["Dispatch Engine<br>• Proximity Sort (Haversine)<br>• Concurrent Dual-Driver Allocation"]:::backend
-        CACHE["In-Memory Db Cache<br>• Zero-Latency Cache-Aside Reads<br>• Dynamic Sync Writes"]:::backend
-    end
+    %% Level 2: Backend REST & API Gateway (Middle Upper)
+    API["Express.js API Server (Render)<br>• Handle REST SOS & Profiles<br>• Run Authentication Gateways"]:::backend
 
-    %% Storage & Infrastructure Layer
-    subgraph Database ["Cloud Infrastructure & Storage"]
-        SUPA["Supabase PostgreSQL DB<br>• Relational Persistence<br>• Trigger Synchronizations"]:::storage
-        CLD["Cloudinary Media Store<br>• CDN Image/Audio hosting<br>• SOS Attachments"]:::thirdparty
-    end
+    %% Level 3: Database & Local Cache sync (Middle Lower)
+    CACHE["In-Memory Db Cache<br>• Direct Zero-Latency Reads<br>• Background Sync Pipeline"]:::backend
+    SUPA["Supabase PostgreSQL DB<br>• Persistent Relational Tables<br>• Sync Capabilities & Settings"]:::storage
 
-    %% Connection Matrix & Data Flow
+    %% Level 4: Live Dispatch Logic & Sockets (Lower Middle)
+    ENG["Dispatch Engine<br>• Proximity Sort (Haversine)<br>• Concurrent Dual-Driver Allocation"]:::backend
+    SIO["Socket.IO Server<br>• Bidirectional WebSockets Hub<br>• Room-based Driver Channels"]:::backend
+
+    %% Level 5: Subscribing / Monitoring Terminals (Bottom)
+    CRD["Control Room Dashboard (Vercel)<br>• Manage Emergencies & Routes<br>• Trigger Manual Re-assignments"]:::client
+    HOD["Hospital Dashboard (Vercel)<br>• Monitor Incoming Alerts<br>• Set Bed & Capability Counts"]:::client
+    POD["Police Dashboard (Vercel)<br>• Acknowledge Live Incident Log<br>• Signal 'Police Active' Status"]:::client
+    DRV["Driver Mobile App (Expo APK)<br>• Accept Offers / Route to Scene<br>• Stream Continuous GPS Coordinates"]:::client
+
+    %% Connection Flows (Labeled Top-Down Data Stream)
     CIT -->|1. Upload Media File| CLD
-    CIT -->|2. Send REST POST /api/emergencies| API
-    CLD -.->|Returns Hosted Media URL| CIT
+    CIT -->|2. HTTP POST SOS Details| API
+    CLD -.->|Hosted Image/Audio URL| API
     
-    API -->|Create Emergency Incident| CACHE
-    CACHE -->|Asynchronous Write-Through| SUPA
+    API -->|Write cache| CACHE
+    CACHE -.->|Asynchronous Sync| SUPA
     
     API -->|Trigger Allocation Request| ENG
-    ENG -->|Calculate Proximity & Select 2 Drivers| SIO
+    ENG -->|Select nearest 2 drivers| SIO
     
     SIO ===>|Broadcast Live Offer Event| DRV
-    DRV ===>|Accept/Reject Offer Sockets| SIO
-    DRV -.->|Continuous GPS Ping Coordinates| SIO
-    
-    SIO ===>|Propagate Incident Seen / Updates| CRD
-    SIO ===>|Propagate Alert Signals| HOD
-    SIO ===>|Sync Log Terminals & State| POD
-    
-    POD ===>|Emit Incident Acknowledged| SIO
-    HOD -->|Update Capability Stats REST| API
-    CRD -->|Manual Dispatch Override REST| API
-    
-    SIO -.->|Location Pings & Status Updates| CACHE
+    SIO ===>|Sync active list / dispatch route| CRD
+    SIO ===>|Sync incoming emergency alert| HOD
+    SIO ===>|Sync incident status & log history| POD
+
+    %% Bidirectional / Action Loops
+    DRV ===>|GPS Coordinates & Accept socket calls| SIO
+    POD ===>|Mark Seen socket emit| SIO
+    HOD -->|Update Capabilities REST POST| API
+    CRD -->|Manual Reassign REST POST| API
+    SIO -.->|Update Ambulance Live Coordinates| CACHE
 ```
 
 ---
