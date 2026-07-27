@@ -258,6 +258,7 @@
   border: 1px solid var(--border-color);
   border-radius: 4px;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .section-title-bar {
@@ -375,7 +376,7 @@
   padding: 1.5rem;
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.5rem;
   overflow-x: auto;
 }
@@ -394,7 +395,7 @@
   flex: 1;
   height: 2px;
   background-color: var(--border-color);
-  transform: translateY(-16px); /* Align with indicators center vertical */
+  margin-top: 13px; /* Align with indicators center vertical exactly */
 }
 
 .stage-connector.active {
