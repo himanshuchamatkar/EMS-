@@ -386,7 +386,8 @@ export default function App() {
                 </p>
               </div>
             </div>
-             <div className="console-body">
+          ) : (
+            <div className="console-body">
               
               {/* Police Action Bar */}
               <div className="section-card police-action-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.2)', marginBottom: '1rem', borderRadius: '6px' }}>
