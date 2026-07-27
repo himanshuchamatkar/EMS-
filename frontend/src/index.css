@@ -2,31 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom Scrollbar for Sleek Dark Look */
+/* Custom Scrollbar for Sleek Light Look */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: #f8fafc;
 }
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #cbd5e1;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: #94a3b8;
 }
 
 body {
   margin: 0;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  background-color: #0f172a;
-  color: #f8fafc;
+  background-color: #f8fafc;
+  color: #0f172a;
   overflow: hidden;
 }
 
-/* Leaflet Dark Mode Map Filters */
+/* Leaflet Light Mode Maps */
+/*
 .dark-map .leaflet-tile {
   filter: invert(100%) hue-rotate(180deg) brightness(85%) contrast(110%);
 }
@@ -64,6 +65,7 @@ body {
   background: #1e293b !important;
   border: 1px solid #334155 !important;
 }
+*/
 
 /* Custom CSS Route Line Animation */
 .leaflet-ant-path {
