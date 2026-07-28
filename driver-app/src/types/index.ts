@@ -35,6 +35,7 @@ export interface Emergency {
   video_url?: string | null;
   audio_url?: string | null;
   report_source?: 'admin' | 'citizen';
+  police_seen?: boolean;
   assigned_hospital_id?: string | null;
   assigned_hospital?: {
     hospital_id: string;
